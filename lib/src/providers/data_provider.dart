@@ -306,7 +306,58 @@ class DataProvider extends ChangeNotifier {
           "selectedColor": "#4CAF50",
           "selectedTextColor": "#FFFFFF"
         },
+        
         {
+          "id": 2,
+          "name": "section",
+          "label": "Sección",
+          "step_id": 2,
+          "icon": "category",
+          "selectedColor": "#607D8B",
+          "selectedTextColor": "#FFFFFF"
+        },
+        {
+          "id": 3,
+          "name": "subsection",
+          "label": "Centros Trabajo",
+          "step_id": 3,
+          "icon": "view_list",
+          "selectedColor": "#9C27B0",
+          "selectedTextColor": "#FFFFFF"
+        },
+        { 
+          "id": 4,
+          "name": "operator",
+          "label": "Operario",
+          "step_id": 4,
+          "icon": "people",
+          "selectedColor": "#FF9800",
+          "selectedTextColor": "#FFFFFF"
+        },
+        {
+          "id": 5,
+          "name": "pieces",
+          "label": "Piezas",
+          "step_id": 5,
+          "icon": "barcode",
+          "selectedColor": "#009688",
+          "selectedTextColor": "#FFFFFF"
+        },
+        {
+          "id": 6,
+          "name": "quantity",
+          "label": "Cantidad",
+          "step_id": 6,
+          "icon": "calculate",
+          "selectedColor": "#009688",
+          "selectedTextColor": "#FFFFFF"
+        }
+      ]
+    }
+    ''';
+
+    /*
+{
           "id": 2,
           "name": "project",
           "label": "Proyecto",
@@ -315,54 +366,7 @@ class DataProvider extends ChangeNotifier {
           "selectedColor": "#2196F3",
           "selectedTextColor": "#FFFFFF"
         },
-        {
-          "id": 3,
-          "name": "section",
-          "label": "Sección",
-          "step_id": 3,
-          "icon": "category",
-          "selectedColor": "#607D8B",
-          "selectedTextColor": "#FFFFFF"
-        },
-        {
-          "id": 4,
-          "name": "subsection",
-          "label": "Centros Trabajo",
-          "step_id": 4,
-          "icon": "view_list",
-          "selectedColor": "#9C27B0",
-          "selectedTextColor": "#FFFFFF"
-        },
-        { 
-          "id": 5,
-          "name": "operator",
-          "label": "Operario",
-          "step_id": 5,
-          "icon": "people",
-          "selectedColor": "#FF9800",
-          "selectedTextColor": "#FFFFFF"
-        },
-        {
-          "id": 6,
-          "name": "pieces",
-          "label": "Piezas",
-          "step_id": 6,
-          "icon": "barcode",
-          "selectedColor": "#009688",
-          "selectedTextColor": "#FFFFFF"
-        },
-        {
-          "id": 7,
-          "name": "quantity",
-          "label": "Cantidad",
-          "step_id": 7,
-          "icon": "calculate",
-          "selectedColor": "#009688",
-          "selectedTextColor": "#FFFFFF"
-        }
-      ]
-    }
-    ''';
+ */
 
     final Map<String, dynamic> data = json.decode(stepsJson);
     final List<dynamic> stepList = data['data'];
