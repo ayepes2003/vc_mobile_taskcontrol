@@ -4,6 +4,7 @@
 *.pyc
 *.swp
 .DS_Store
+Thumbs.db
 .atom/
 .build/
 .buildlog/
@@ -11,17 +12,26 @@
 .svn/
 .swiftpm/
 migrate_working_dir/
+.AppleDouble
+.LSOverride
+.Trash-*
 
 # IntelliJ related
 *.iml
 *.ipr
 *.iws
 .idea/
+.idea/**/tasks.xml
+.idea/**/workspace.xml
+.idea/**/dictionaries
+.idea/**/shelf
+.idea/**/libraries
 
-# The .vscode folder contains launch configuration and tasks you configure in
-# VS Code which you may wish to be included in version control, so this line
-# is commented out by default.
-#.vscode/
+# VSCode settings (ajusta según tu preferencia)
+.vscode/
+
+# FVM
+.fvm/
 
 # Flutter/Dart/Pub related
 **/doc/api/
@@ -31,7 +41,12 @@ migrate_working_dir/
 .flutter-plugins-dependencies
 .pub-cache/
 .pub/
-/build/
+build/
+**/build/
+
+# Firebase and Google services
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist
 
 # Symbolication related
 app.*.symbols
@@ -39,7 +54,18 @@ app.*.symbols
 # Obfuscation related
 app.*.map.json
 
-# Android Studio will place build artifacts here
-/android/app/debug
-/android/app/profile
-/android/app/release
+# Android build output
+/android/.gradle/
+/android/app/build/
+/android/app/debug/
+/android/app/profile/
+/android/app/release/
+
+# macOS
+*.xcuserstate
+
+# Fastlane output
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots
+fastlane/test_output
