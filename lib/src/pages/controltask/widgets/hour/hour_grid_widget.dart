@@ -1,34 +1,33 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:vc_taskcontrol/src/models/section.dart';
 import 'package:vc_taskcontrol/src/providers/mock_data_provider.dart';
 import 'package:vc_taskcontrol/src/providers/route_data_provider.dart';
 
-class SectionGridWidget extends StatelessWidget {
-  final ValueChanged<Section> onSelected;
+class HourRangeGridWidget extends StatelessWidget {
+  final ValueChanged<String> onSelected;
 
-  const SectionGridWidget({Key? key, required this.onSelected})
+  const HourRangeGridWidget({Key? key, required this.onSelected})
     : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    final hourRanges = context.watch<MockDataProvider>().hourRanges;
+    final selectedHour = context.watch<RouteDataProvider>().selectedHourRange;
+
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
-    final sections = context.watch<MockDataProvider>().sections;
-    final selectedSection = context.watch<RouteDataProvider>().selectedSection;
-
     return GridView.extent(
-      maxCrossAxisExtent: 180,
+      maxCrossAxisExtent: 160,
       mainAxisSpacing: 16,
       crossAxisSpacing: 16,
       padding: const EdgeInsets.all(16),
       children:
-          sections.map((section) {
-            final isSelected = selectedSection?.id == section.id;
+          hourRanges.map((range) {
+            final isSelected = range == selectedHour;
 
             return GestureDetector(
-              onTap: () => onSelected(section),
+              onTap: () => onSelected(range),
               child: Card(
                 color:
                     isSelected
@@ -47,10 +46,9 @@ class SectionGridWidget extends StatelessWidget {
                 ),
                 child: Center(
                   child: Text(
-                    section.sectionName,
-                    style: textTheme.titleLarge!.copyWith(
+                    range,
+                    style: textTheme.titleMedium!.copyWith(
                       fontWeight: FontWeight.bold,
-                      fontSize: 18,
                       color:
                           isSelected
                               ? colorScheme.primary

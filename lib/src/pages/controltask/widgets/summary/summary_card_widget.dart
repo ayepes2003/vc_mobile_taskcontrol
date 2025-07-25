@@ -1,34 +1,32 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:vc_taskcontrol/src/providers/route_data_provider.dart';
 
 class SummaryCardWidget extends StatelessWidget {
-  final String? project;
-  final int? estimatedQuantity;
-  final int? realQuantity;
+  // final int? realQuantity;
   final Widget? lastEntry;
-  final String supervisor;
-
-  final String operatorName;
-  final String section;
-  final String subsection;
-
-  const SummaryCardWidget({
-    super.key,
-    this.project,
-    this.estimatedQuantity,
-    this.realQuantity,
-    this.lastEntry,
-    required this.supervisor,
-    required this.operatorName,
-    required this.section,
-    required this.subsection,
-  });
+  //  this.realQuantity,
+  const SummaryCardWidget({super.key, this.lastEntry});
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-    final int difference = (estimatedQuantity ?? 0) - (realQuantity ?? 0);
+    // Recupera los datos desde el Provider
 
+    final routeData = context.watch<RouteDataProvider>();
+    final realQuantity = context.watch<RouteDataProvider>().realQuantity;
+    final String project = routeData.projectName?.trim() ?? 'Sin proyecto';
+    final int estimatedQuantity = routeData.totalPieces ?? 0;
+    final int difference = (realQuantity ?? 0) - estimatedQuantity;
+    final String supervisor = routeData.supervisor?.trim() ?? '—';
+    final String operatorName = routeData.operatorName?.trim() ?? '—';
+    final String section = routeData.section?.trim() ?? '—';
+    final String subsection = routeData.subsection?.trim() ?? '—';
+    // print("Supervisor: $supervisor");
+    // print("Operator:$operatorName");
+    // print("Section:$section");
+    // print("Subsection $subsection");
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Column(
@@ -38,9 +36,7 @@ class SummaryCardWidget extends StatelessWidget {
             width: double.infinity,
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: colorScheme.primary.withOpacity(
-                0.13,
-              ), // Fondo suave corporativo
+              color: colorScheme.primary.withOpacity(0.13),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
@@ -49,7 +45,7 @@ class SummaryCardWidget extends StatelessWidget {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    project ?? 'Sin proyecto',
+                    project,
                     style: textTheme.titleLarge!.copyWith(
                       color: colorScheme.primary,
                       fontWeight: FontWeight.bold,
@@ -78,12 +74,12 @@ class SummaryCardWidget extends StatelessWidget {
                   _buildSummaryRow(
                     context,
                     "Estimada",
-                    estimatedQuantity?.toString() ?? "-",
+                    estimatedQuantity.toString(),
                   ),
                   _buildSummaryRow(
                     context,
                     "Real",
-                    realQuantity?.toString() ?? "-",
+                    (realQuantity ?? "-").toString(),
                   ),
                   _buildSummaryRow(
                     context,
@@ -114,7 +110,7 @@ class SummaryCardWidget extends StatelessWidget {
               ),
             ),
           ),
-          // Último dato abajo (corregido)
+          // Último dato abajo
           if (lastEntry != null)
             lastEntry!
           else
@@ -166,11 +162,7 @@ class SummaryCardWidget extends StatelessWidget {
             child: Text(
               value,
               style: textTheme.bodyMedium!.copyWith(
-                color:
-                    highlight
-                        ? Colors
-                            .red // Puedes usar colorScheme.error si prefieres
-                        : colorScheme.onSurface,
+                color: highlight ? Colors.red : colorScheme.onSurface,
                 fontWeight: highlight ? FontWeight.bold : FontWeight.normal,
               ),
             ),

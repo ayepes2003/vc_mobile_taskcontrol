@@ -26,19 +26,19 @@ class CalculatorButton {
 }
 
 class QuantityStepWidget extends StatefulWidget {
-  final String supervisor;
-  final String project;
-  final String operatorName;
-  final String section;
-  final String subsection;
+  // final String supervisor;
+  // final String project;
+  // final String operatorName;
+  // final String section;
+  // final String subsection;
 
   const QuantityStepWidget({
     Key? key,
-    required this.supervisor,
-    required this.project,
-    required this.operatorName,
-    required this.section,
-    required this.subsection,
+    // required this.supervisor,
+    // required this.project,
+    // required this.operatorName,
+    // required this.section,
+    // required this.subsection,
   }) : super(key: key);
 
   @override

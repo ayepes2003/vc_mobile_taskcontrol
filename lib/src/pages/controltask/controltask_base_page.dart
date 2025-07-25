@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'dart:convert';
+import 'package:collection/collection.dart';
+
 import 'package:vc_taskcontrol/src/models/operator.dart';
 import 'package:vc_taskcontrol/src/models/project.dart';
 import 'package:vc_taskcontrol/src/models/section.dart';
@@ -7,13 +10,15 @@ import 'package:vc_taskcontrol/src/models/stepconfig.dart';
 import 'package:vc_taskcontrol/src/models/supervisor.dart' show Supervisor;
 import 'package:vc_taskcontrol/src/pages/controltask/widgets/central_content.dart';
 import 'package:vc_taskcontrol/src/pages/controltask/widgets/menus/side_menu_widget.dart';
-import 'package:vc_taskcontrol/src/providers/data_provider.dart';
+import 'package:vc_taskcontrol/src/providers/app/steps_provider.dart';
+import 'package:vc_taskcontrol/src/providers/app/supervisors_provider.dart';
+import 'package:vc_taskcontrol/src/providers/mock_data_provider.dart';
+import 'package:vc_taskcontrol/src/providers/route_data_provider.dart';
 import 'package:vc_taskcontrol/src/providers/router_card_provider.dart';
 import 'package:vc_taskcontrol/src/services/connection_provider.dart';
+import 'package:vc_taskcontrol/src/storage/preferences/app_preferences.dart';
 import 'package:vc_taskcontrol/src/widgets/custom_app_bar.dart';
 import 'widgets/widgets_page.dart';
-import 'dart:convert';
-import 'package:collection/collection.dart';
 
 class ControltaskBasePage extends StatefulWidget {
   const ControltaskBasePage({Key? key}) : super(key: key);
@@ -24,21 +29,8 @@ class ControltaskBasePage extends StatefulWidget {
 
 class _ControltaskBasePageState extends State<ControltaskBasePage> {
   int selectionStep = 0;
-  int? selectedProjectId;
-  int? selectedSupervisorId;
-  int? selectedOperatorId;
-  Operator? selectedOperator;
 
-  String? selectedSubsection;
-  Section? selectedSection;
-
-  Map<String, String> selectedValues = {
-    "Supervisor": "Jorge",
-    "Proyecto": "Proyecto X",
-    "Sección": "Corte",
-    "Subsección": "Mesa 2",
-    "Cantidad": "25",
-  };
+  late List<StepConfig> steps; // 👈 Nueva propiedad de estado
 
   int getNextStepIndex(List<StepConfig> steps, String currentStepName) {
     final currentStep = steps.firstWhere(
@@ -55,52 +47,84 @@ class _ControltaskBasePageState extends State<ControltaskBasePage> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      // 🔄 Hidratación de sección y subsección desde SharedPreferences
       Provider.of<RouteCardProvider>(
         context,
         listen: false,
       ).loadRoutesFromCSV();
+      final routeProvider = Provider.of<RouteDataProvider>(
+        context,
+        listen: false,
+      );
+
+      // Simulación: carga desde SharedPreferences o algún servicio local
+      final savedSection = await AppPreferences.getSection(); // String
+      final savedSubsection = await AppPreferences.getSubsection(); // String
+
+      // 👉 Ahora tú buscas en tu lista de secciones (del DataProvider)
+      final allSections =
+          Provider.of<MockDataProvider>(context, listen: false).sections;
+      final matchedSection = allSections.firstWhereOrNull(
+        (section) => section.sectionName == savedSection,
+      );
+
+      if (matchedSection != null) {
+        routeProvider.setSelectedSection(matchedSection);
+        if (savedSubsection != null) {
+          routeProvider.setSelectedSubsection(savedSubsection);
+        }
+      }
     });
   }
 
-  void onSubsectionSelected(String subsection) {
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final dataProvider = Provider.of<MockDataProvider>(context);
+    steps = dataProvider.steps;
+  }
+
+  void onSubsectionSelected(String subsection) async {
+    final routeProvider = Provider.of<RouteDataProvider>(
+      context,
+      listen: false,
+    );
+
+    routeProvider.setSelectedSubsection(subsection);
+    routeProvider.setSubsection(subsection);
+    await AppPreferences.setSubsection(subsection);
+
     setState(() {
-      selectedSubsection = subsection;
+      selectionStep = getNextStepIndex(steps, "subsection");
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final dataProvider = Provider.of<DataProvider>(context);
-    final List<StepConfig> steps = dataProvider.steps;
-    final List<Supervisor> supervisors = dataProvider.supervisors;
+    final dataProvider = Provider.of<MockDataProvider>(context);
+    final stepsProvider = Provider.of<StepsProvider>(context);
+    final List<StepConfig> steps = stepsProvider.steps;
+
+    final supervisorsProvider = Provider.of<SupervisorsProvider>(context);
+    final List<Supervisor> supervisors = supervisorsProvider.supervisors;
+
+    // final List<StepConfig> steps = dataProvider.steps;
+    // final List<Supervisor> supervisors = dataProvider.supervisors;
+
+    final provider = context.watch<RouteCardProvider>();
+    final routeData = context.watch<RouteDataProvider>();
+
+    // Obtén el último registro leído (si hay)
+    final lastRead =
+        provider.recentReads.isNotEmpty ? provider.recentReads.first : null;
+
     final List<Project> projects = dataProvider.projects;
     final List<Section> sections = dataProvider.sections;
     final List<Operator> operators = dataProvider.operators;
-    final List<String> subsections = selectedSection?.subsections ?? [];
-    final String selectedSubsectionName = selectedSubsection ?? '';
+    final List<String> subsections =
+        routeData.selectedSection?.subsections ?? [];
 
-    if (subsections.isEmpty) {
-      selectedSubsection = null;
-    }
-
-    final Supervisor? selectedSupervisor = supervisors.firstWhereOrNull(
-      (s) => s.id == selectedSupervisorId,
-    );
-    final String selectedSupervisorName = selectedSupervisor?.name ?? '';
-
-    final Project? selectedProject = projects.firstWhereOrNull(
-      (p) => p.id == selectedProjectId,
-    );
-    final String selectedProjectName = selectedProject?.projectName ?? '';
-
-    ;
-    final String selectedSectionName = selectedSection?.sectionName ?? '';
-
-    Operator? selectedOperator = operators.firstWhereOrNull(
-      (o) => o.id == selectedOperatorId,
-    );
-    final String selectedOperatorName = selectedOperator?.name ?? '';
     final isConnected = Provider.of<ConnectionProvider>(context).isConnected;
 
     return Scaffold(
@@ -130,53 +154,94 @@ class _ControltaskBasePageState extends State<ControltaskBasePage> {
                   child: CentralContent(
                     selectionStep: selectionStep,
                     steps: steps,
-                    supervisors: supervisors,
-                    selectedSupervisorId: selectedSupervisorId,
-                    onSupervisorSelected: (supervisor) {
+                    onSupervisorSelected: (supervisor) async {
+                      final routeProvider = Provider.of<RouteDataProvider>(
+                        context,
+                        listen: false,
+                      );
+                      routeProvider.setSupervisor(supervisor.name);
+                      routeProvider.setSelectedSupervisorId(
+                        supervisor.id,
+                      ); // ✅ nuevo
+                      await AppPreferences.setSupervisor(supervisor.name);
+
                       setState(() {
-                        selectedSupervisorId = supervisor.id;
                         selectionStep = getNextStepIndex(steps, "supervisor");
                       });
                     },
-                    projects: projects,
-                    selectedProjectId: selectedProjectId,
                     onProjectSelected: (project) {
+                      final routeProvider = Provider.of<RouteDataProvider>(
+                        context,
+                        listen: false,
+                      );
+                      routeProvider.setSelectedProjectId(project.id); // ✅ nuevo
                       setState(() {
-                        selectedProjectId = project.id;
                         selectionStep = getNextStepIndex(steps, "project");
                       });
                     },
-                    sections: sections,
-                    selectedSection: selectedSection,
-                    onSectionSelected: (section) {
+                    onSectionSelected: (section) async {
+                      final routeProvider = Provider.of<RouteDataProvider>(
+                        context,
+                        listen: false,
+                      );
+
+                      routeProvider.setSelectedSection(
+                        section,
+                      ); // actualizas ambos
+                      routeProvider.setSection(
+                        section.sectionName,
+                      ); // si quieres guardar el nombre “puro”
+
+                      await AppPreferences.setSection(section.sectionName);
+
                       setState(() {
-                        selectedSection = section;
-                        selectedSubsection = null;
+                        // TODO: eliminar
                         selectionStep = steps.indexWhere(
                           (step) => step.name == "subsection",
                         );
                       });
                     },
-                    subsections: subsections,
-                    selectedSubsection: selectedSubsection,
-                    onSubsectionSelected: (subsection) {
+
+                    onSubsectionSelected: (subsection) async {
+                      final routeProvider = Provider.of<RouteDataProvider>(
+                        context,
+                        listen: false,
+                      );
+
+                      routeProvider.setSelectedSubsection(
+                        subsection,
+                      ); // 👈 ahora lo almacena bien
+                      routeProvider.setSubsection(
+                        subsection,
+                      ); // 👈 si usas el valor textual también
+
+                      await AppPreferences.setSubsection(subsection);
                       setState(() {
-                        selectedSubsection = subsection;
                         selectionStep = getNextStepIndex(steps, "subsection");
                       });
                     },
-                    selectedSupervisorName: selectedSupervisorName,
-                    selectedProjectName: selectedProjectName,
-                    selectedOperatorName: selectedOperatorName,
-                    selectedSectionName: selectedSectionName,
-                    selectedSubsectionName: selectedSubsectionName,
-                    operators: operators,
-                    selectedOperatorId: selectedOperatorId,
-                    onOperatorSelected: (operator) {
+                    onOperatorSelected: (operator) async {
+                      final routeProvider = Provider.of<RouteDataProvider>(
+                        context,
+                        listen: false,
+                      );
+
+                      routeProvider.setOperatorName(operator.name);
+                      routeProvider.setSelectedOperatorId(
+                        operator.id,
+                      ); // ✅ Nuevo
+
+                      await AppPreferences.setOperator(operator.name);
                       setState(() {
-                        selectedOperatorId = operator.id;
-                        selectedOperator = operator;
                         selectionStep = getNextStepIndex(steps, "operator");
+                      });
+                    },
+                    onHourRangeSelected: (range) async {
+                      final routeProvider = context.read<RouteDataProvider>();
+                      routeProvider.setSelectedHourRange(range);
+
+                      setState(() {
+                        selectionStep = getNextStepIndex(steps, 'hour_range');
                       });
                     },
                   ),
@@ -187,21 +252,29 @@ class _ControltaskBasePageState extends State<ControltaskBasePage> {
           Container(
             width: 255,
             color: Colors.grey[100],
-            child: SummaryCardWidget(
-              project: selectedProjectName,
-              supervisor: selectedSupervisorName,
-              operatorName: selectedOperatorName,
-              section: selectedSectionName,
-              subsection: selectedSubsectionName,
-              estimatedQuantity: 120,
-              realQuantity: 100,
-              lastEntry: LastEntryWidget(
-                supervisor: 'Jorge',
-                operator: 'Ana',
-                section: 'Corte',
-                subsection: 'Mesa 2',
-                quantity: 25,
-              ),
+            child: Column(
+              children: [
+                ElevatedButton.icon(
+                  icon: Icon(Icons.delete_forever, color: Colors.red),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: Colors.red,
+                  ),
+                  label: Text('Limpiar'),
+                  onPressed: () async {
+                    await AppPreferences.clearAll();
+                    Provider.of<RouteDataProvider>(
+                      context,
+                      listen: false,
+                    ).clear();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Preferencias y sesión borradas')),
+                    );
+                  },
+                ),
+                const SizedBox(height: 8),
+                SummaryCardWidget(lastEntry: LastEntryWidget()),
+              ],
             ),
           ),
         ],

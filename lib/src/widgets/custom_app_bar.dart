@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:vc_taskcontrol/src/providers/data_provider.dart';
+
 import 'package:vc_taskcontrol/src/providers/theme_provider.dart';
 import 'package:vc_taskcontrol/src/services/connection_provider.dart';
 import 'package:provider/provider.dart';
@@ -86,15 +86,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
             }
           },
         ),
-        // IconButton(
-        //   icon: Icon(Icons.visibility_off), // O cualquier icono representativo
-        //   tooltip: 'Ocultar columnas de producción',
-        //   onPressed: () {
-        //     final provider = Provider.of<DataProvider>(context, listen: false);
-        //     provider.toggleProductionColumns(); // O alternar según estado
-        //     // provider.toggleProductionColumns(true); // O alternar según estado
-        //   },
-        // ),
+
         IconButton(
           icon: const Icon(Icons.settings),
           tooltip: 'Settings',

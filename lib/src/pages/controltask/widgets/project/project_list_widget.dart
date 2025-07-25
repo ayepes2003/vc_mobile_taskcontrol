@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:vc_taskcontrol/src/models/project.dart';
+import 'package:vc_taskcontrol/src/providers/route_data_provider.dart';
 
 class ProjectListWidget extends StatelessWidget {
   final List<Project> projects;
@@ -19,6 +21,8 @@ class ProjectListWidget extends StatelessWidget {
     if (projects.isEmpty) {
       return const Center(child: Text('No hay proyectos disponibles'));
     }
+    final selectedId = context.watch<RouteDataProvider>().selectedProjectId;
+    final onSelected = context.read<RouteDataProvider>().setSelectedProjectId;
     return ListView.separated(
       padding: const EdgeInsets.all(16),
       itemCount: projects.length,
@@ -88,7 +92,9 @@ class ProjectListWidget extends StatelessWidget {
                 ),
               ],
             ),
-            onTap: onSelected != null ? () => onSelected!(project) : null,
+            onTap: () {
+              // onSelected != null ? () => onSelected!(project) : null,
+            },
           ),
         );
       },

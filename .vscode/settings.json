@@ -3,5 +3,8 @@
     "flutterTools.displayMobxContextMenu": false,
     "flutterTools.displayRiverpodContextMenu": false,
     "flutterTools.displayModularContextMenu": false,
-    "dart.flutterSdkPath": "D:\\src\\Flutter_3.13.8"
+    "dart.flutterSdkPath": "D:\\src\\Flutter_3.13.8",
+    "cSpell.words": [
+        "planta"
+    ]
 }

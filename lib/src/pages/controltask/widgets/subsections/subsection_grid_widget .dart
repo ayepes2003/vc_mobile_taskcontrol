@@ -1,21 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:vc_taskcontrol/src/providers/route_data_provider.dart';
 
 class SubsectionGridWidget extends StatelessWidget {
-  final List<String> subsections;
-  final String? selectedSubsection;
   final ValueChanged<String> onSelected;
 
-  const SubsectionGridWidget({
-    Key? key,
-    required this.subsections,
-    required this.selectedSubsection,
-    required this.onSelected,
-  }) : super(key: key);
+  const SubsectionGridWidget({Key? key, required this.onSelected})
+    : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+
+    final selectedSection = context.watch<RouteDataProvider>().selectedSection;
+    final selectedSubsection =
+        context.watch<RouteDataProvider>().selectedSubsection;
+
+    final subsections = selectedSection?.subsections ?? [];
 
     return GridView.extent(
       maxCrossAxisExtent: 150,
@@ -25,6 +27,7 @@ class SubsectionGridWidget extends StatelessWidget {
       children:
           subsections.map((subsection) {
             final isSelected = subsection == selectedSubsection;
+
             return GestureDetector(
               onTap: () => onSelected(subsection),
               child: Card(

@@ -105,7 +105,7 @@ class _CircularMenuWidgetState extends State<CircularMenuWidget> {
           onTap: () {
             setState(() {
               _selectionColor = AppColors.warning;
-              _selectionLabel = 'Báscula';
+              _selectionLabel = 'Monitoring';
               context.push('/monitoring');
             });
           },

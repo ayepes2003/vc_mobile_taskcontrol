@@ -13,9 +13,9 @@ class RouteCardRead {
 
   int get difference {
     final diff = enteredQuantity - (int.tryParse(card.totalPiece) ?? 0);
-    print(
-      'DIF [${card.codeProces}]: $enteredQuantity - ${card.totalPiece} = $diff',
-    );
+    // print(
+    //   'DIF [${card.codeProces}]: $enteredQuantity - ${card.totalPiece} = $diff',
+    // );
     return diff;
   }
 

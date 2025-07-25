@@ -45,6 +45,8 @@ class StepConfig {
         return Icons.settings;
       case 'barcode':
         return Icons.barcode_reader;
+      case 'access_time':
+        return Icons.access_time;
       default:
         return Icons.help_outline;
     }

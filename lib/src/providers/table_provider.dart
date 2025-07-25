@@ -36,7 +36,7 @@ class TableProvider with ChangeNotifier {
 
   Map<String, dynamic>? getItemByCodeOrSku(String value) {
     try {
-      print(value);
+      // print(value);
       return _storage.items.firstWhere(
         (item) => item['codigo'] == value || item['codigo'] == value,
       );

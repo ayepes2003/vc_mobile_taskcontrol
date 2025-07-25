@@ -7,7 +7,7 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 class DioService {
   final Dio _dio;
   final ApiConfigService _apiConfig;
-
+  Dio get dio => _dio;
   DioService(this._dio, this._apiConfig);
 
   DioService.withConfig()
