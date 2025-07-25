@@ -3,6 +3,9 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:provider/provider.dart';
+import 'package:vc_taskcontrol/src/providers/app/hour_ranges_provider.dart';
+import 'package:vc_taskcontrol/src/providers/app/operators_provider.dart';
+import 'package:vc_taskcontrol/src/providers/app/sections_provider.dart';
 import 'package:vc_taskcontrol/src/providers/app/steps_provider.dart';
 import 'package:vc_taskcontrol/src/providers/app/supervisors_provider.dart';
 import 'package:vc_taskcontrol/src/providers/route_data_provider.dart';
@@ -67,7 +70,9 @@ void main() async {
   final dioService = DioService(dio, apiConfig);
   final connectionProvider = ConnectionProvider(dioService, apiConfig);
   final router = createRouter(connectionProvider);
-
+  final now = DateTime.now();
+  final String time =
+      "${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}:00";
   runApp(
     MultiProvider(
       providers: [
@@ -76,13 +81,28 @@ void main() async {
               (_) => ThemeProvider(isDarkMode: GeneralPreferences.isDarkMode),
         ),
         ChangeNotifierProvider(create: (_) => connectionProvider),
+
+        ChangeNotifierProvider(
+          create: (context) => StepsProvider(dioService)..loadStepsFromApi(),
+        ),
         ChangeNotifierProvider(
           create:
               (context) =>
                   SupervisorsProvider(dioService)..loadSupervisorsFromApi(),
         ),
         ChangeNotifierProvider(
-          create: (context) => StepsProvider(dioService)..loadStepsFromApi(),
+          create:
+              (context) =>
+                  HourRangesProvider(dioService)..loadHourRangesFromApi(),
+        ),
+        ChangeNotifierProvider(
+          create:
+              (context) => SectionsProvider(dioService)..loadSectionsFromApi(),
+        ),
+        ChangeNotifierProvider(
+          create:
+              (context) =>
+                  OperatorsProvider(dioService)..loadOperatorsFromApi(),
         ),
         ChangeNotifierProvider(
           create: (_) {
@@ -109,10 +129,10 @@ void main() async {
                     ..loadMonitorData()
                     // ..loadStepsFromJson()
                     // ..loadSupervisorsFromJson()
+                    // ..loadSectionsFromJson()
                     ..loadProjectsFromJson()
-                    ..loadSectionsFromJson()
-                    ..loadHourRangesFromMock()
-                    ..loadOperatorsFromJson(),
+                    ..loadHourRangesFromMock(),
+          // ..loadOperatorsFromJson(),
         ),
       ],
       child: MyApp(router: router),

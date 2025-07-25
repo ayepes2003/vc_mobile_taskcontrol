@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:vc_taskcontrol/src/models/section.dart';
-import 'package:vc_taskcontrol/src/providers/mock_data_provider.dart';
+import 'package:vc_taskcontrol/src/providers/app/sections_provider.dart';
+// import 'package:vc_taskcontrol/src/providers/mock_data_provider.dart';
 import 'package:vc_taskcontrol/src/providers/route_data_provider.dart';
 
 class SectionGridWidget extends StatelessWidget {
@@ -15,7 +16,9 @@ class SectionGridWidget extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
-    final sections = context.watch<MockDataProvider>().sections;
+    // final sections = context.watch<MockDataProvider>().sections;
+    final sections = context.watch<SectionsProvider>().sections;
+
     final selectedSection = context.watch<RouteDataProvider>().selectedSection;
 
     return GridView.extent(

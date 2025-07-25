@@ -24,7 +24,7 @@ Widget? getWidgetForStep({
   required ValueChanged<Operator> onOperatorSelected,
   required ValueChanged<String> onHourRangeSelected,
 }) {
-  final routeProvider = context.watch<RouteDataProvider>();
+  // final routeProvider = context.watch<RouteDataProvider>();
 
   switch (stepName) {
     case 'supervisor':

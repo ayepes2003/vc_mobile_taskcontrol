@@ -21,20 +21,35 @@ class MockDataProvider extends ChangeNotifier {
   bool showProduction = true; // Puedes controlar este estado desde tu UI
 
   void loadHourRangesFromMock() {
-    const String mockResponse = '''{
-      "shift": {
-        "name": "Turno 1",
-        "start_time": "06:00:00",
-        "end_time": "13:59:59"
-      },
-      "hour_ranges": [
-        "06:00 - 07:00",
-        "07:00 - 08:00",
-        "08:00 - 09:00"
-      ]
-    }''';
+    const String mockResponse = '''
+        {
+          "status": "success",
+          "data": [
+            {
+              "shift": {
+                "name": "Turno 2",
+                "start_time": "14:00:00",
+                "end_time": "22:00:00"
+              },
+              "hour_ranges": [
+                "14:00 - 15:00",
+                "15:00 - 16:00",
+                "16:00 - 17:00",
+                "17:00 - 18:00",
+                "18:00 - 19:00",
+                "19:00 - 20:00",
+                "20:00 - 21:00",
+                "21:00 - 22:00"
+              ]
+            }
+          ],
+          "message": "Hour ranges for 20:31:00 belong to shift Turno 2",
+          "errors": null
+        }
+        ''';
 
-    final Map<String, dynamic> data = json.decode(mockResponse);
+    final Map<String, dynamic> response = json.decode(mockResponse);
+    final Map<String, dynamic> data = (response['data'] as List).first;
     final model = HourRangeResponseModel.fromJson(data);
     hourRanges = model.hourRanges;
     currentShift = model.shift;

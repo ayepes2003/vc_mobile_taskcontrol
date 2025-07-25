@@ -63,6 +63,7 @@ class SupervisorGridWidget extends StatelessWidget {
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 6),
+
                       Text(
                         supervisor.turno,
                         style: textTheme.bodyMedium!.copyWith(

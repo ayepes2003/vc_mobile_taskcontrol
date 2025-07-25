@@ -10,6 +10,9 @@ import 'package:vc_taskcontrol/src/models/stepconfig.dart';
 import 'package:vc_taskcontrol/src/models/supervisor.dart' show Supervisor;
 import 'package:vc_taskcontrol/src/pages/controltask/widgets/central_content.dart';
 import 'package:vc_taskcontrol/src/pages/controltask/widgets/menus/side_menu_widget.dart';
+import 'package:vc_taskcontrol/src/providers/app/hour_ranges_provider.dart';
+import 'package:vc_taskcontrol/src/providers/app/operators_provider.dart';
+import 'package:vc_taskcontrol/src/providers/app/sections_provider.dart';
 import 'package:vc_taskcontrol/src/providers/app/steps_provider.dart';
 import 'package:vc_taskcontrol/src/providers/app/supervisors_provider.dart';
 import 'package:vc_taskcontrol/src/providers/mock_data_provider.dart';
@@ -133,7 +136,7 @@ class _ControltaskBasePageState extends State<ControltaskBasePage> {
         usuario: 'Usuario: ayepes2003@yahoo.es',
         fechaHora: '26/03/2025 20:00',
         isConnected: isConnected,
-        title_app: 'Manual Time Control Production',
+        title_app: 'Production Time Control Manual',
       ),
       body: Row(
         children: [
@@ -254,23 +257,50 @@ class _ControltaskBasePageState extends State<ControltaskBasePage> {
             color: Colors.grey[100],
             child: Column(
               children: [
-                ElevatedButton.icon(
-                  icon: Icon(Icons.delete_forever, color: Colors.red),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: Colors.red,
-                  ),
-                  label: Text('Limpiar'),
-                  onPressed: () async {
-                    await AppPreferences.clearAll();
-                    Provider.of<RouteDataProvider>(
-                      context,
-                      listen: false,
-                    ).clear();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Preferencias y sesión borradas')),
-                    );
-                  },
+                Row(
+                  children: [
+                    ElevatedButton.icon(
+                      icon: Icon(Icons.refresh, color: Colors.red),
+                      // icon: Icon(Icons.delete_forever, color: Colors.red),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: Colors.red,
+                      ),
+                      label: Text('Refresh'),
+                      onPressed: () async {
+                        await AppPreferences.clearAll();
+                        // Provider.of<RouteDataProvider>(
+                        //   context,
+                        //   listen: false,
+                        // ).clear();
+                        Provider.of<SupervisorsProvider>(
+                          context,
+                          listen: false,
+                        ).loadSupervisorsFromApi();
+
+                        Provider.of<HourRangesProvider>(
+                          context,
+                          listen: false,
+                        ).loadHourRangesFromApi();
+
+                        Provider.of<SectionsProvider>(
+                          context,
+                          listen: false,
+                        ).loadSectionsFromApi();
+
+                        Provider.of<OperatorsProvider>(
+                          context,
+                          listen: false,
+                        ).loadOperatorsFromApi();
+
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Preferencias y sesión borradas'),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 8),
                 SummaryCardWidget(lastEntry: LastEntryWidget()),
