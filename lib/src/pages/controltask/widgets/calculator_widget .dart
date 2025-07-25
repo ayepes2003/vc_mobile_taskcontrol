@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:vc_taskcontrol/src/providers/route_data_provider.dart';
+import 'package:vc_taskcontrol/src/storage/preferences/app_preferences.dart';
 
 class CalculatorWidget extends StatelessWidget {
   final String displayValue;
@@ -79,7 +82,33 @@ class CalculatorWidget extends StatelessWidget {
                     minimumSize: const Size(80, 80),
                     textStyle: const TextStyle(fontSize: 28),
                   ),
-                  onPressed: () => onButtonPressed(label),
+                  onPressed:
+                      () => (label) async {
+                        if (label == 'OK') {
+                          if (label == 'C') {
+                            // Aquí limpias preferencias ¡y también puedes limpiar el provider si quieres!
+                            await AppPreferences.clearAll();
+                            // Si quieres, limpia los datos en el provider
+                            Provider.of<RouteDataProvider>(
+                              context,
+                              listen: false,
+                            ).clear();
+                            // Opcional: Actualizar display/calculadora u otros estados
+                            // setState(() { displayValue = ''; });
+                            // Muestra un mensaje si quieres feedback al usuario
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  'Preferencias limpiadas exitosamente',
+                                ),
+                              ),
+                            );
+                            return; // Para evitar ejecutar lógica extra para 'C'
+                          }
+                        } else {
+                          onButtonPressed(label);
+                        }
+                      },
                   child: Text(textLabel),
                 );
               }).toList(),

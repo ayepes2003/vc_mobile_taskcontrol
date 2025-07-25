@@ -3,10 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:vc_taskcontrol/src/models/operator.dart';
 import 'package:vc_taskcontrol/src/models/project.dart';
 import 'package:vc_taskcontrol/src/models/section.dart';
+import 'package:vc_taskcontrol/src/models/shift/hour_range_response_model.dart';
+import 'package:vc_taskcontrol/src/models/shift/shift_model.dart';
 import 'package:vc_taskcontrol/src/models/stepconfig.dart';
 import 'package:vc_taskcontrol/src/models/supervisor.dart';
 
-class DataProvider extends ChangeNotifier {
+class MockDataProvider extends ChangeNotifier {
   List<Project> projects = [];
   List<Section> sections = [];
   List<Supervisor> supervisors = [];
@@ -14,6 +16,31 @@ class DataProvider extends ChangeNotifier {
   List<StepConfig> steps = [];
   List<Map<String, dynamic>> columns = [];
   List<Map<String, dynamic>> rows = [];
+  List<String> hourRanges = [];
+  ShiftModel? currentShift;
+  bool showProduction = true; // Puedes controlar este estado desde tu UI
+
+  void loadHourRangesFromMock() {
+    const String mockResponse = '''{
+      "shift": {
+        "name": "Turno 1",
+        "start_time": "06:00:00",
+        "end_time": "13:59:59"
+      },
+      "hour_ranges": [
+        "06:00 - 07:00",
+        "07:00 - 08:00",
+        "08:00 - 09:00"
+      ]
+    }''';
+
+    final Map<String, dynamic> data = json.decode(mockResponse);
+    final model = HourRangeResponseModel.fromJson(data);
+    hourRanges = model.hourRanges;
+    currentShift = model.shift;
+    notifyListeners();
+  }
+
   void loadColumnsFromJson() {
     const String columnsJson = '''
    [
@@ -248,126 +275,80 @@ class DataProvider extends ChangeNotifier {
     loadRowsFromJson();
   }
 
-  void oldtoggleProductionColumns(bool hide) {
-    final prodIds = [
-      'cutting',
-      'edgebanding',
-      'drilling',
-      'preparation',
-      'painting',
-      'packing',
-      'dispatch',
-    ];
-    for (var col in columns) {
-      if (prodIds.contains(col['id'])) {
-        col['hidden'] = hide;
-      }
-    }
-    notifyListeners();
-  }
-
-  bool showProduction = true; // Puedes controlar este estado desde tu UI
-
-  void toggleProductionColumns() {
-    final prodIds = [
-      'cutting',
-      'edgebanding',
-      'drilling',
-      'preparation',
-      'painting',
-      'packing',
-    ];
-
-    final preProdIds = ['project_design', 'planner1', 'innovation', 'planner'];
-
-    for (var col in columns) {
-      if (prodIds.contains(col['id'])) {
-        col['hidden'] = !showProduction;
-      }
-      if (preProdIds.contains(col['id'])) {
-        col['hidden'] = showProduction;
-      }
-    }
-    showProduction = !showProduction; // Alterna el estado para la próxima vez
-    notifyListeners();
-  }
-
   void loadStepsFromJson() {
     const String stepsJson = '''
-    {
-      "status": "success",
-      "data": [
-        {
-          "id": 1,
-          "name": "supervisor",
-          "label": "Supervisores",
-          "step_id": 1,
-          "icon": "person",
-          "selectedColor": "#4CAF50",
-          "selectedTextColor": "#FFFFFF"
-        },
-        
-        {
-          "id": 2,
-          "name": "section",
-          "label": "Sección",
-          "step_id": 2,
-          "icon": "category",
-          "selectedColor": "#607D8B",
-          "selectedTextColor": "#FFFFFF"
-        },
-        {
-          "id": 3,
-          "name": "subsection",
-          "label": "Centros Trabajo",
-          "step_id": 3,
-          "icon": "view_list",
-          "selectedColor": "#9C27B0",
-          "selectedTextColor": "#FFFFFF"
-        },
-        { 
-          "id": 4,
-          "name": "operator",
-          "label": "Operario",
-          "step_id": 4,
-          "icon": "people",
-          "selectedColor": "#FF9800",
-          "selectedTextColor": "#FFFFFF"
-        },
-        {
-          "id": 5,
-          "name": "pieces",
-          "label": "Piezas",
-          "step_id": 5,
-          "icon": "barcode",
-          "selectedColor": "#009688",
-          "selectedTextColor": "#FFFFFF"
-        },
-        {
-          "id": 6,
-          "name": "quantity",
-          "label": "Cantidad",
-          "step_id": 6,
-          "icon": "calculate",
-          "selectedColor": "#009688",
-          "selectedTextColor": "#FFFFFF"
-        }
-      ]
-    }
-    ''';
-
+  {
+    "status": "success",
+    "data": [
+      {
+        "id": 1,
+        "name": "supervisor",
+        "label": "Supervisores",
+        "step_id": 1,
+        "icon": "person",
+        "selectedColor": "#4CAF50",
+        "selectedTextColor": "#FFFFFF"
+      },
+      {
+        "id": 2,
+        "name": "hour_range",
+        "label": "Hora - Hora",
+        "step_id": 2,
+        "icon": "access_time",
+        "selectedColor": "#FFA726",
+        "selectedTextColor": "#FFFFFF"
+      },
+      {
+        "id": 3,
+        "name": "section",
+        "label": "Sección",
+        "step_id": 3,
+        "icon": "category",
+        "selectedColor": "#607D8B",
+        "selectedTextColor": "#FFFFFF"
+      },
+      {
+        "id": 4,
+        "name": "subsection",
+        "label": "Centros Trabajo",
+        "step_id": 4,
+        "icon": "view_list",
+        "selectedColor": "#9C27B0",
+        "selectedTextColor": "#FFFFFF"
+      },
+      {
+        "id": 5,
+        "name": "operator",
+        "label": "Operario",
+        "step_id": 5,
+        "icon": "people",
+        "selectedColor": "#FF9800",
+        "selectedTextColor": "#FFFFFF"
+      },
+      {
+        "id": 6,
+        "name": "pieces",
+        "label": "Piezas",
+        "step_id": 6,
+        "icon": "barcode",
+        "selectedColor": "#009688",
+        "selectedTextColor": "#FFFFFF"
+      }
+    ]
+  }
+  ''';
     /*
-{
-          "id": 2,
-          "name": "project",
-          "label": "Proyecto",
-          "step_id": 2,
-          "icon": "assignment",
-          "selectedColor": "#2196F3",
-          "selectedTextColor": "#FFFFFF"
-        },
- */
-
+,
+      {
+        "id": 7,
+        "name": "quantity",
+        "label": "Cantidad",
+        "step_id": 7,
+        "icon": "calculate",
+        "selectedColor": "#009688",
+        "selectedTextColor": "#FFFFFF"
+      }
+*/
     final Map<String, dynamic> data = json.decode(stepsJson);
     final List<dynamic> stepList = data['data'];
     steps = stepList.map((item) => StepConfig.fromJson(item)).toList();
@@ -536,6 +517,30 @@ class DataProvider extends ChangeNotifier {
 
     final List<dynamic> data = json.decode(operatorsJson);
     operators = data.map((item) => Operator.fromJson(item)).toList();
+    notifyListeners();
+  }
+
+  void toggleProductionColumns() {
+    final prodIds = [
+      'cutting',
+      'edgebanding',
+      'drilling',
+      'preparation',
+      'painting',
+      'packing',
+    ];
+
+    final preProdIds = ['project_design', 'planner1', 'innovation', 'planner'];
+
+    for (var col in columns) {
+      if (prodIds.contains(col['id'])) {
+        col['hidden'] = !showProduction;
+      }
+      if (preProdIds.contains(col['id'])) {
+        col['hidden'] = showProduction;
+      }
+    }
+    showProduction = !showProduction; // Alterna el estado para la próxima vez
     notifyListeners();
   }
 }

@@ -34,7 +34,7 @@ class KPICountsWidget extends StatelessWidget {
         ),
         _kpiBox(
           icon: Icons.pending_outlined,
-          label: 'Pendientes',
+          label: 'Rutas pendientes',
           value: totalPending.toString(),
           color: colorScheme.error,
           bgColor: colorScheme.error.withOpacity(0.13),

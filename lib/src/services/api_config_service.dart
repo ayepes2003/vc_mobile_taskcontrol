@@ -1,6 +1,6 @@
-// lib/src/services/api_config_service.dart
-// import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:vc_taskcontrol/src/models/stepconfig.dart';
+import 'package:flutter/foundation.dart';
 
 class ApiConfigService {
   static const String _apiUrlKey = 'api_url';
@@ -12,9 +12,6 @@ class ApiConfigService {
 
   Future<String> getApiUrl() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_apiUrlKey) ??
-        'http://192.168.1.47:8000/api/v3'; // Valor por defecto
+    return prefs.getString(_apiUrlKey) ?? 'http://192.168.1.47:8000/api/v3';
   }
 }
-
-        // 'http://agroonline_backend.test/api/v1'; // Valor por defecto

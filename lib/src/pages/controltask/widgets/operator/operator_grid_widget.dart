@@ -1,17 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:vc_taskcontrol/src/models/operator.dart';
+import 'package:vc_taskcontrol/src/providers/mock_data_provider.dart';
+import 'package:vc_taskcontrol/src/providers/route_data_provider.dart';
 
 class OperatorGridWidget extends StatelessWidget {
-  final List<Operator> operators;
-  final int? selectedOperatorId;
   final ValueChanged<Operator> onSelected;
   final Color selectedColor;
   final Color selectedTextColor;
 
   const OperatorGridWidget({
     Key? key,
-    required this.operators,
-    required this.selectedOperatorId,
     required this.onSelected,
     this.selectedColor = Colors.orange,
     this.selectedTextColor = Colors.white,
@@ -19,6 +18,10 @@ class OperatorGridWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final operators = context.watch<MockDataProvider>().operators;
+    final selectedOperatorId =
+        context.watch<RouteDataProvider>().selectedOperatorId;
+
     return GridView.extent(
       maxCrossAxisExtent: 180,
       mainAxisSpacing: 16,
@@ -27,6 +30,7 @@ class OperatorGridWidget extends StatelessWidget {
       children:
           operators.map((operator) {
             final isSelected = operator.id == selectedOperatorId;
+
             return GestureDetector(
               onTap: () => onSelected(operator),
               child: Card(

@@ -1,20 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:vc_taskcontrol/src/models/supervisor.dart';
+import 'package:vc_taskcontrol/src/providers/app/supervisors_provider.dart';
+import 'package:vc_taskcontrol/src/providers/route_data_provider.dart';
 
 class SupervisorGridWidget extends StatelessWidget {
-  final List<Supervisor> supervisors;
-  final int? selectedSupervisorId;
   final ValueChanged<Supervisor> onSelected;
 
-  const SupervisorGridWidget({
-    Key? key,
-    required this.supervisors,
-    required this.selectedSupervisorId,
-    required this.onSelected,
-  }) : super(key: key);
+  const SupervisorGridWidget({Key? key, required this.onSelected})
+    : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    // final supervisors = context.watch<MockDataProvider>().supervisors;
+    final supervisors = context.watch<SupervisorsProvider>().supervisors;
+
+    final selectedSupervisorId =
+        context.watch<RouteDataProvider>().selectedSupervisorId;
+
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
@@ -26,6 +29,7 @@ class SupervisorGridWidget extends StatelessWidget {
       children:
           supervisors.map((supervisor) {
             final isSelected = supervisor.id == selectedSupervisorId;
+
             return GestureDetector(
               onTap: () => onSelected(supervisor),
               child: Card(

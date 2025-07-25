@@ -1,60 +1,112 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:vc_taskcontrol/src/providers/route_data_provider.dart';
+import 'package:vc_taskcontrol/src/providers/router_card_provider.dart';
 
 class LastEntryWidget extends StatelessWidget {
-  final String? supervisor;
-  final String? operator;
-  final String? section;
-  final String? subsection;
-  final int? quantity;
-
-  const LastEntryWidget({
-    Key? key,
-    this.supervisor,
-    this.operator,
-    this.section,
-    this.subsection,
-    this.quantity,
-  }) : super(key: key);
+  const LastEntryWidget({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+    final provider = context.watch<RouteCardProvider>();
+    final routeData = context.watch<RouteDataProvider>();
+    final lastRead =
+        provider.recentReads.isNotEmpty ? provider.recentReads.first : null;
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(14),
-      margin: const EdgeInsets.only(top: 8),
-      decoration: BoxDecoration(
-        color: colorScheme.secondary.withOpacity(
-          0.12,
-        ), // Fondo suave corporativo
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.history, size: 28, color: colorScheme.secondary),
-              const SizedBox(width: 10),
-              Text(
-                'Registro anterior',
-                style: textTheme.titleLarge!.copyWith(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: colorScheme.secondary,
-                ),
+    if (lastRead == null) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(12),
+        margin: const EdgeInsets.only(top: 16),
+        decoration: BoxDecoration(
+          color: colorScheme.secondary.withOpacity(0.12),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.history, size: 24, color: colorScheme.secondary),
+            const SizedBox(width: 5),
+            Text(
+              'Sin datos recientes',
+              style: textTheme.bodyLarge!.copyWith(
+                color: colorScheme.secondary,
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
               ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Text('Supervisor: ${supervisor ?? "-"}', style: textTheme.bodyMedium),
-          Text('Operario: ${operator ?? "-"}', style: textTheme.bodyMedium),
-          Text('Sección: ${section ?? "-"}', style: textTheme.bodyMedium),
-          Text('Subsección: ${subsection ?? "-"}', style: textTheme.bodyMedium),
-          Text('Cantidad: ${quantity ?? "-"}', style: textTheme.bodyMedium),
-        ],
+            ),
+          ],
+        ),
+      );
+    }
+
+    Widget buildEntryRow(String label, String value) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 3),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              label,
+              style: textTheme.bodyMedium!.copyWith(
+                fontWeight: FontWeight.bold,
+                color: colorScheme.secondary,
+                fontSize: 13,
+              ),
+            ),
+            const SizedBox(height: 1.5),
+            Text(
+              value,
+              style: textTheme.bodyMedium,
+              overflow: TextOverflow.ellipsis,
+              maxLines: 3,
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      margin: const EdgeInsets.only(top: 14),
+      // color: colorScheme.secondary.withOpacity(0.08),
+      child: Padding(
+        padding: const EdgeInsets.all(14.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.history, size: 22, color: colorScheme.secondary),
+                const SizedBox(width: 8),
+                Text(
+                  'Tarjeta Ruta',
+                  style: textTheme.titleMedium!.copyWith(
+                    color: colorScheme.secondary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            // buildEntryRow('Proyecto', lastRead.card.projectName),
+            // buildEntryRow('Supervisor', routeData.supervisor ?? '-'),
+            // buildEntryRow('Operario', routeData.operatorName ?? '-'),
+            // buildEntryRow('Sección', routeData.section ?? '-'),
+            // buildEntryRow('Subsección', routeData.subsection ?? '-'),
+            buildEntryRow('Producto', lastRead.card.item ?? '-'),
+            buildEntryRow(
+              'Descripción',
+              lastRead.card.descriptionMaterial ?? '-',
+            ),
+            // buildEntryRow(
+            //   'Cantidad digitada',
+            //   lastRead.enteredQuantity.toString(),
+            // ),
+          ],
+        ),
       ),
     );
   }
