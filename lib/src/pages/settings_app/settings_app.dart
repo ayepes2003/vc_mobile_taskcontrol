@@ -65,12 +65,14 @@ class _SettingsAppPageState extends State<SettingsAppPage> {
         title_app: '$appName\n($moduleName)',
       ),
       drawer: const CustomDrawerMenu(),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [ApiRestConfigCard(), WebSocketConfigCard()],
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [ApiRestConfigCard(), WebSocketConfigCard()],
+            ),
           ),
         ),
       ),

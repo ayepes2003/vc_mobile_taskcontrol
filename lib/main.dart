@@ -5,6 +5,7 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:provider/provider.dart';
 import 'package:vc_taskcontrol/src/providers/app/hour_ranges_provider.dart';
 import 'package:vc_taskcontrol/src/providers/app/operators_provider.dart';
+import 'package:vc_taskcontrol/src/providers/app/scanner/scan_history.dart';
 import 'package:vc_taskcontrol/src/providers/app/sections_provider.dart';
 import 'package:vc_taskcontrol/src/providers/app/steps_provider.dart';
 import 'package:vc_taskcontrol/src/providers/app/supervisors_provider.dart';
@@ -55,13 +56,13 @@ void main() async {
   final endpoint = GeneralPreferences.apiEndpoint;
   final fullUrl = '$protocol://$base:$port$endpoint';
   final uri = Uri.tryParse(fullUrl);
-  bool apiWasReset = false;
+  // bool apiWasReset = false;
   if (uri == null || uri.host.isEmpty || uri.scheme.isEmpty) {
     GeneralPreferences.apiProtocol = 'http';
     GeneralPreferences.apiBase = '172.16.100.10';
     GeneralPreferences.apiPort = '8000';
     GeneralPreferences.apiEndpoint = '/api/v3';
-    apiWasReset = true;
+    // apiWasReset = true;
   }
   final dio = Dio();
   final apiConfig = ApiConfigService();
@@ -70,9 +71,7 @@ void main() async {
   final dioService = DioService(dio, apiConfig);
   final connectionProvider = ConnectionProvider(dioService, apiConfig);
   final router = createRouter(connectionProvider);
-  final now = DateTime.now();
-  final String time =
-      "${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}:00";
+
   runApp(
     MultiProvider(
       providers: [
@@ -81,6 +80,7 @@ void main() async {
               (_) => ThemeProvider(isDarkMode: GeneralPreferences.isDarkMode),
         ),
         ChangeNotifierProvider(create: (_) => connectionProvider),
+        ChangeNotifierProvider(create: (_) => ScanHistoryProvider()),
 
         ChangeNotifierProvider(
           create: (context) => StepsProvider(dioService)..loadStepsFromApi(),

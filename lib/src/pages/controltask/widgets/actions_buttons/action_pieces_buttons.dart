@@ -26,17 +26,17 @@ class ActionButtonsPieces extends StatelessWidget {
       children: [
         ElevatedButton.icon(
           icon: Icon(
-            Icons.camera,
+            Icons.qr_code,
             color: Theme.of(context).colorScheme.onPrimary,
           ),
           label: Text(
-            'camera',
+            'QR',
             style: TextStyle(color: Theme.of(context).colorScheme.onPrimary),
           ),
           onPressed: oncamarePressed,
           style: ElevatedButton.styleFrom(
             backgroundColor: Theme.of(context).colorScheme.primary,
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+            padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
           ),
         ),
         const SizedBox(width: 10),

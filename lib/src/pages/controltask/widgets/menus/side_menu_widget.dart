@@ -18,7 +18,7 @@ class SideMenuWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 245,
+      width: 200,
       color: Theme.of(context).colorScheme.onPrimary, // Colors.grey[200],
       child: Column(
         mainAxisAlignment: MainAxisAlignment.start,

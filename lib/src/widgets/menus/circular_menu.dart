@@ -96,6 +96,11 @@ class _CircularMenuWidgetState extends State<CircularMenuWidget> {
             setState(() {
               _selectionColor = AppColors.success;
               _selectionLabel = 'Bluetooth';
+              final location = GoRouterState.of(context).matchedLocation;
+              if (location != '/scannertest') {
+                GeneralPreferences.currentModule = 'scannertest';
+                context.push('/scannertest');
+              }
             });
           },
         ),

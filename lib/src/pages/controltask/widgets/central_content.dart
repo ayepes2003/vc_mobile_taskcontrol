@@ -38,6 +38,7 @@ class CentralContent extends StatelessWidget {
     }
 
     final currentStepName = steps[selectionStep].name;
+
     return Container(
       width: double.infinity,
       color: Colors.white,
@@ -60,5 +61,43 @@ class CentralContent extends StatelessWidget {
         ],
       ),
     );
+    // return Container(
+    //   width: double.infinity,
+    //   color: Colors.white,
+    //   // Añade LayoutBuilder para capturar el espacio disponible
+    //   child: LayoutBuilder(
+    //     builder: (context, constraints) {
+    //       return SingleChildScrollView(
+    //         // padding inferior dinámico para dejar espacio con el teclado
+    //         padding: EdgeInsets.only(
+    //           bottom: MediaQuery.of(context).viewInsets.bottom,
+    //           top: 10,
+    //           left: 0,
+    //           right: 0,
+    //         ),
+    //         child: ConstrainedBox(
+    //           constraints: BoxConstraints(minHeight: constraints.maxHeight),
+    //           child: IntrinsicHeight(
+    //             child: Column(
+    //               children: [
+    //                 getWidgetForStep(
+    //                       stepName: currentStepName,
+    //                       context: context,
+    //                       onSupervisorSelected: onSupervisorSelected,
+    //                       onProjectSelected: onProjectSelected,
+    //                       onSectionSelected: onSectionSelected,
+    //                       onSubsectionSelected: onSubsectionSelected,
+    //                       onOperatorSelected: onOperatorSelected,
+    //                       onHourRangeSelected: onHourRangeSelected,
+    //                     ) ??
+    //                     const SizedBox(),
+    //               ],
+    //             ),
+    //           ),
+    //         ),
+    //       );
+    //     },
+    //   ),
+    // );
   }
 }

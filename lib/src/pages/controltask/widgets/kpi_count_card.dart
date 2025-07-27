@@ -18,7 +18,7 @@ class KPICountsWidget extends StatelessWidget {
       children: [
         _kpiBox(
           icon: Icons.upload_sharp,
-          label: 'Rutas cargadas',
+          label: 'Cargadas',
           value: totalLoaded.toString(),
           color: colorScheme.primary,
           bgColor: colorScheme.primary.withOpacity(0.13),
@@ -26,7 +26,7 @@ class KPICountsWidget extends StatelessWidget {
         ),
         _kpiBox(
           icon: Icons.pending_actions_outlined,
-          label: 'Rutas Leidas',
+          label: 'Leidas',
           value: totalRead.toString(),
           color: colorScheme.secondary,
           bgColor: colorScheme.secondary.withOpacity(0.13),
@@ -34,7 +34,7 @@ class KPICountsWidget extends StatelessWidget {
         ),
         _kpiBox(
           icon: Icons.pending_outlined,
-          label: 'Rutas pendientes',
+          label: 'Pendientes',
           value: totalPending.toString(),
           color: colorScheme.error,
           bgColor: colorScheme.error.withOpacity(0.13),
@@ -56,7 +56,7 @@ Widget _kpiBox({
   return Expanded(
     child: Container(
       margin: const EdgeInsets.symmetric(horizontal: 6),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
         color: bgColor,
         borderRadius: BorderRadius.circular(12),
