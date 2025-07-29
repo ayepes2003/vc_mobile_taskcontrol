@@ -10,10 +10,10 @@ class SummaryCardWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool tablet = MediaQuery.of(context).size.width > 700;
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     // Recupera los datos desde el Provider
-
     final routeData = context.watch<RouteDataProvider>();
     final realQuantity = context.watch<RouteDataProvider>().realQuantity;
     final String project = routeData.projectName?.trim() ?? 'Sin proyecto';
@@ -28,13 +28,13 @@ class SummaryCardWidget extends StatelessWidget {
     // print("Section:$section");
     // print("Subsection $subsection");
     return Padding(
-      padding: const EdgeInsets.all(16.0),
+      padding: const EdgeInsets.all(4.0),
       child: Column(
         children: [
           // Proyecto arriba
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
               color: colorScheme.primary.withOpacity(0.13),
               borderRadius: BorderRadius.circular(12),
@@ -42,7 +42,7 @@ class SummaryCardWidget extends StatelessWidget {
             child: Row(
               children: [
                 Icon(Icons.assignment, size: 32, color: colorScheme.primary),
-                const SizedBox(width: 12),
+                const SizedBox(width: 5),
                 Expanded(
                   child: Text(
                     project,
@@ -56,8 +56,7 @@ class SummaryCardWidget extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 1),
-
+          // const SizedBox(height: 1),
           // Cantidades en el centro
           Card(
             shape: RoundedRectangleBorder(
@@ -111,7 +110,7 @@ class SummaryCardWidget extends StatelessWidget {
             ),
           ),
           // Último dato abajo
-          if (lastEntry != null)
+          if (!tablet && lastEntry != null)
             lastEntry!
           else
             Container(

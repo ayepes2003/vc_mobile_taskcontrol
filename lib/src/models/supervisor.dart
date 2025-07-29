@@ -2,13 +2,23 @@ class Supervisor {
   final int id;
   final String name;
   final String documentNum;
-  final String turno;
+  final int sectionId;
+  final String sectionName;
+  final int subsectionId;
+  final String subsectionName;
+  final String shift;
+  final String doneType;
 
   Supervisor({
     required this.id,
     required this.name,
     required this.documentNum,
-    required this.turno,
+    required this.sectionId,
+    required this.sectionName,
+    required this.subsectionId,
+    required this.subsectionName,
+    required this.shift,
+    required this.doneType,
   });
 
   factory Supervisor.fromJson(Map<String, dynamic> json) {
@@ -16,7 +26,26 @@ class Supervisor {
       id: json['id'],
       name: json['name'],
       documentNum: json['document_num'],
-      turno: json['turno'],
+      sectionId: json['sectionId'],
+      sectionName: json['sectionName'],
+      subsectionId: json['subsectionId'],
+      subsectionName: json['subsectionName'],
+      shift: json['shift'],
+      doneType: json['done_type'],
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'document_num': documentNum,
+      'sectionId': sectionId,
+      'sectionName': sectionName,
+      'subsectionId': subsectionId,
+      'subsectionName': subsectionName,
+      'shift': shift,
+      'done_type': doneType,
+    };
   }
 }

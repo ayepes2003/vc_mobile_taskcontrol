@@ -96,6 +96,26 @@ class _CircularMenuWidgetState extends State<CircularMenuWidget> {
             setState(() {
               _selectionColor = AppColors.success;
               _selectionLabel = 'Bluetooth';
+              // final location = GoRouterState.of(context).matchedLocation;
+              // if (location != '/scannertest') {
+              //   GeneralPreferences.currentModule = 'scannertest';
+              //   context.push('/scannertest');
+              // }
+            });
+          },
+        ),
+        CircularMenuItem(
+          icon: Icons.qr_code_2_sharp, // Nuevo icono reemplazando a "chat"
+          color: AppColors.primary,
+          onTap: () {
+            setState(() {
+              _selectionColor = AppColors.success;
+              _selectionLabel = 'Test Barcode';
+              final location = GoRouterState.of(context).matchedLocation;
+              if (location != '/scannertest') {
+                GeneralPreferences.currentModule = 'scannertest';
+                context.push('/scannertest');
+              }
             });
           },
         ),

@@ -5,7 +5,6 @@ import 'package:vc_taskcontrol/src/storage/preferences/general_preferences.dart'
 import 'package:vc_taskcontrol/src/widgets/custom_app_bar.dart';
 import 'package:vc_taskcontrol/src/widgets/menus/circular_menu.dart';
 import 'package:vc_taskcontrol/src/widgets/menus/custom_menu_drawer.dart';
-import 'package:vc_taskcontrol/src/widgets/menus/custom_radial_menu.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -28,25 +27,19 @@ class _HomePageState extends State<HomePage> {
         title_app: '$appName',
       ),
       drawer: const CustomDrawerMenu(),
-      body: const CircularMenuWidget(),
+      body: // Ejemplo solo para el menú
+          SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.only(
+            bottom: 16.0,
+          ), // Ajusta el valor al gusto
+          child: Align(
+            alignment: Alignment.bottomCenter,
+            child: CircularMenuWidget(),
+          ),
+        ),
+      ),
+      // body: const CircularMenuWidget(),
     );
   }
 }
-
-
-// body: Center(
-      //   child:
-      //       showGlassMenu
-      //           ? const GlassMenu()
-      //           : const CustomRadialMenu(), // Cambia el nombre si tu widget radial tiene otro nombre
-      // ),
-      // floatingActionButton: FloatingActionButton(
-      //   onPressed: () {
-      //     setState(() {
-      //       showGlassMenu = !showGlassMenu;
-      //     });
-      //   },
-      //   child: const Icon(Icons.swap_horiz),
-      //   tooltip: 'Cambiar menú',
-      // ),
-      // import 'package:vc_taskcontrol/src/widgets/menus/glass_menu.dart';

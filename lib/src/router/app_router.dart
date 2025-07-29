@@ -1,5 +1,6 @@
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:vc_taskcontrol/src/pages/scanner/test_scanner_page.dart';
 
 import '../pages/pages_base.dart';
 import '../services/connection_provider.dart';
@@ -20,6 +21,10 @@ GoRouter createRouter(ConnectionProvider connectionProvider) {
       GoRoute(
         path: '/monitoring',
         builder: (context, state) => MonitoringGeneralStatusPage(),
+      ),
+      GoRoute(
+        path: '/scannertest',
+        builder: (context, state) => TestScanPage(),
       ),
       GoRoute(
         path: '/no-connection',

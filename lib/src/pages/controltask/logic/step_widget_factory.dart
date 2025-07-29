@@ -11,8 +11,8 @@ import 'package:vc_taskcontrol/src/pages/controltask/widgets/steps/quantity_step
 import 'package:vc_taskcontrol/src/pages/controltask/widgets/subsections/subsection_grid_widget%20.dart';
 
 import 'package:vc_taskcontrol/src/pages/controltask/widgets/widgets_page.dart';
-import 'package:provider/provider.dart';
-import 'package:vc_taskcontrol/src/providers/route_data_provider.dart';
+// import 'package:provider/provider.dart';
+// import 'package:vc_taskcontrol/src/providers/route_data_provider.dart';
 
 Widget? getWidgetForStep({
   required String stepName,
@@ -24,7 +24,7 @@ Widget? getWidgetForStep({
   required ValueChanged<Operator> onOperatorSelected,
   required ValueChanged<String> onHourRangeSelected,
 }) {
-  final routeProvider = context.watch<RouteDataProvider>();
+  // final routeProvider = context.watch<RouteDataProvider>();
 
   switch (stepName) {
     case 'supervisor':

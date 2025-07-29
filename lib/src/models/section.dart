@@ -1,8 +1,8 @@
 class Section {
   final int id;
   final String sectionName;
-  final String subSectionName;
-  final String verbOperation;
+  final String? subSectionName;
+  final String? verbOperation;
   final List<String> measurements;
   final List<String> subsections;
 

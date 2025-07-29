@@ -3,6 +3,10 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:provider/provider.dart';
+import 'package:vc_taskcontrol/src/providers/app/hour_ranges_provider.dart';
+import 'package:vc_taskcontrol/src/providers/app/operators_provider.dart';
+import 'package:vc_taskcontrol/src/providers/app/scanner/scan_history.dart';
+import 'package:vc_taskcontrol/src/providers/app/sections_provider.dart';
 import 'package:vc_taskcontrol/src/providers/app/steps_provider.dart';
 import 'package:vc_taskcontrol/src/providers/app/supervisors_provider.dart';
 import 'package:vc_taskcontrol/src/providers/route_data_provider.dart';
@@ -52,13 +56,13 @@ void main() async {
   final endpoint = GeneralPreferences.apiEndpoint;
   final fullUrl = '$protocol://$base:$port$endpoint';
   final uri = Uri.tryParse(fullUrl);
-  bool apiWasReset = false;
+  // bool apiWasReset = false;
   if (uri == null || uri.host.isEmpty || uri.scheme.isEmpty) {
     GeneralPreferences.apiProtocol = 'http';
     GeneralPreferences.apiBase = '172.16.100.10';
     GeneralPreferences.apiPort = '8000';
     GeneralPreferences.apiEndpoint = '/api/v3';
-    apiWasReset = true;
+    // apiWasReset = true;
   }
   final dio = Dio();
   final apiConfig = ApiConfigService();
@@ -76,13 +80,29 @@ void main() async {
               (_) => ThemeProvider(isDarkMode: GeneralPreferences.isDarkMode),
         ),
         ChangeNotifierProvider(create: (_) => connectionProvider),
+        ChangeNotifierProvider(create: (_) => ScanHistoryProvider()),
+
+        ChangeNotifierProvider(
+          create: (context) => StepsProvider(dioService)..loadStepsFromApi(),
+        ),
         ChangeNotifierProvider(
           create:
               (context) =>
                   SupervisorsProvider(dioService)..loadSupervisorsFromApi(),
         ),
         ChangeNotifierProvider(
-          create: (context) => StepsProvider(dioService)..loadStepsFromApi(),
+          create:
+              (context) =>
+                  HourRangesProvider(dioService)..loadHourRangesFromApi(),
+        ),
+        ChangeNotifierProvider(
+          create:
+              (context) => SectionsProvider(dioService)..loadSectionsFromApi(),
+        ),
+        ChangeNotifierProvider(
+          create:
+              (context) =>
+                  OperatorsProvider(dioService)..loadOperatorsFromApi(),
         ),
         ChangeNotifierProvider(
           create: (_) {
@@ -107,12 +127,12 @@ void main() async {
               (_) =>
                   MockDataProvider()
                     ..loadMonitorData()
-                    // ..loadStepsFromJson()
-                    // ..loadSupervisorsFromJson()
-                    ..loadProjectsFromJson()
-                    ..loadSectionsFromJson()
-                    ..loadHourRangesFromMock()
-                    ..loadOperatorsFromJson(),
+                    ..loadProjectsFromJson(),
+          // ..loadStepsFromJson() //Mockup Local APi
+          // ..loadSupervisorsFromJson()//Mockup Local AP
+          // ..loadSectionsFromJson()//Mockup Local AP
+          // ..loadHourRangesFromMock(),//Mockup Local AP
+          // ..loadOperatorsFromJson(),//Mockup  Local AP
         ),
       ],
       child: MyApp(router: router),

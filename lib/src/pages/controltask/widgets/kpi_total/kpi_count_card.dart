@@ -1,18 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:vc_taskcontrol/src/providers/route_data_provider.dart';
 import 'package:vc_taskcontrol/src/providers/router_card_provider.dart';
 
 class KPICountsWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<RouteCardProvider>(context);
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
+    // final selectedSectionName = provider.selectedSection?.sectionName;
+    final selectedSectionName =
+        context.watch<RouteDataProvider>().selectedSection?.sectionName;
+
+    // Filtrar rutas y lecturas por el nombre de la sección seleccionada
+    // final routesFiltered =
+    //     selectedSectionName == null
+    //         ? []
+    //         : provider.routes
+    //             .where((route) => route.sectionName == selectedSectionName)
+    //             .toList();
 
     final int totalLoaded = provider.routes.length;
     final int totalRead = provider.recentReads.length;
     final int totalPending = totalLoaded - totalRead;
 
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [

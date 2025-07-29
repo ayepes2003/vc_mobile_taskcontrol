@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter/services.dart';
 import 'package:vc_taskcontrol/src/models/routescard/route_card.dart';
 import 'package:vc_taskcontrol/src/models/routescard/route_card_read.dart';
 import 'package:vc_taskcontrol/src/pages/controltask/widgets/actions_buttons/action_pieces_buttons.dart';
-import 'package:vc_taskcontrol/src/pages/controltask/widgets/calculator_widget%20.dart';
-import 'package:vc_taskcontrol/src/pages/controltask/widgets/kpi_count_card.dart';
+import 'package:vc_taskcontrol/src/pages/controltask/widgets/utils/calculator_widget%20.dart';
+import 'package:vc_taskcontrol/src/pages/controltask/widgets/kpi_total/kpi_count_card.dart';
 import 'package:vc_taskcontrol/src/pages/controltask/widgets/routecard/route_card_tablet.dart';
+import 'package:vc_taskcontrol/src/pages/scanner/widgets/scanner_widget.dart';
+import 'package:vc_taskcontrol/src/providers/app/scanner/scan_history.dart';
 import 'package:vc_taskcontrol/src/providers/route_data_provider.dart';
 import 'package:vc_taskcontrol/src/providers/router_card_provider.dart';
 import 'package:vc_taskcontrol/src/storage/preferences/app_preferences.dart';
-import 'package:vc_taskcontrol/src/widgets/search_field.dart';
+import 'package:vc_taskcontrol/src/utils/barcode/dialogs.dart';
 
 class PiecesStepWidget extends StatefulWidget {
   final VoidCallback onCameraPressed;
@@ -50,7 +53,7 @@ class _PiecesStepWidgetState extends State<PiecesStepWidget> {
 
     if (resultado != null) {
       final int estimated = int.tryParse(resultado.totalPiece ?? '0') ?? 0;
-      const int tolerance = 5; // pon el valor que necesitas
+      const int tolerance = 0; //5 pon el valor que necesitas
       String? cantidadStr = await showQuantityDialog(
         context,
         estimated,
@@ -87,7 +90,7 @@ class _PiecesStepWidgetState extends State<PiecesStepWidget> {
     final focusNode = FocusNode();
     String? errorText;
 
-    void onValidate() {
+    void onValidate(StateSetter setStateDialog) {
       final val = controller.text.trim();
       final parsed = int.tryParse(val);
       if (val.isEmpty || parsed == null || parsed == 0) {
@@ -96,68 +99,135 @@ class _PiecesStepWidgetState extends State<PiecesStepWidget> {
         focusNode.requestFocus();
       } else if (parsed > estimated + tolerance) {
         errorText =
-            "La cantidad reportada es superior a la inicial, hay un tope de unidades de tolerancia.\n\n";
-        // "No puede exceder ${estimated + tolerance} (Estimada + $tolerance)";
+            "La cantidad reportada es superior a la inicial (máx: ${estimated + tolerance}).";
         controller.clear();
         focusNode.requestFocus();
       } else {
         Navigator.of(context).pop(val);
         return;
       }
-      // Llama setState solo una vez aquí
-      (context as Element).markNeedsBuild();
+      setStateDialog(() {}); // Redibuja el dialog solo cuando cambian errores.
     }
 
     return await showDialog<String>(
       context: context,
-      builder: (BuildContext context) {
-        Future.microtask(() {
-          if (focusNode.canRequestFocus) focusNode.requestFocus();
-        });
+      barrierDismissible: false, // Obliga a pulsar cancelar u OK
+      builder: (BuildContext dialogContext) {
         return StatefulBuilder(
-          builder:
-              (context, setState) => AlertDialog(
-                title: const Text('Ingrese cantidad'),
-                content: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TextFormField(
-                      controller: controller,
-                      focusNode: focusNode,
-                      keyboardType: TextInputType.number,
-                      decoration: InputDecoration(
-                        hintText: 'Cantidad',
-                        border: const OutlineInputBorder(),
-                        errorText: errorText,
-                      ),
-                      onFieldSubmitted: (_) {
-                        setState(onValidate);
-                      },
-                    ),
-                    if (errorText != null)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 8),
-                        child: Text(
-                          errorText!,
-                          style: const TextStyle(
-                            color: Colors.red,
-                            fontSize: 13,
-                          ),
+          builder: (context, setStateDialog) {
+            // Este scroll y safearea aseguran que el teclado jamás tape el campo/botones
+            return SafeArea(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.only(
+                  bottom:
+                      MediaQuery.of(context).viewInsets.bottom +
+                      20, // Ajusta si hay teclado
+                  top: 20,
+                  left: 24,
+                  right: 24,
+                ),
+                child: AlertDialog(
+                  title: const Text('Ingrese cantidad'),
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Máximo permitido: ${estimated + tolerance}',
+                        style: TextStyle(
+                          color: Colors.orange,
+                          fontWeight: FontWeight.w500,
+                          fontSize: 13,
                         ),
                       ),
+                      const SizedBox(height: 10),
+                      // TextFormField(
+                      //   controller: controller,
+                      //   focusNode: focusNode,
+                      //   keyboardType: TextInputType.numberWithOptions(
+                      //     signed: true,
+                      //   ),
+                      //   autofocus: true,
+                      //   decoration: InputDecoration(
+                      //     hintText: 'Cantidad',
+                      //     border: const OutlineInputBorder(),
+                      //     errorText: errorText,
+                      //   ),
+                      //   onFieldSubmitted: (_) {
+                      //     onValidate(setStateDialog);
+                      //   },
+                      // ),
+                      TextFormField(
+                        controller: controller,
+                        focusNode: focusNode,
+                        keyboardType: TextInputType.numberWithOptions(
+                          signed: true,
+                        ), // Permite negativo/guion
+                        autofocus: true,
+                        decoration: InputDecoration(
+                          hintText: 'Cantidad',
+                          border: const OutlineInputBorder(),
+                          errorText: errorText,
+                          filled: true,
+                          fillColor: Colors.white,
+                          suffixIcon: Icon(Icons.numbers, color: Colors.green),
+                          focusedBorder: OutlineInputBorder(
+                            borderSide: BorderSide(
+                              color: Colors.green,
+                              width: 2.0,
+                            ),
+                            borderRadius: BorderRadius.circular(10.0),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderSide: BorderSide(
+                              color: Colors.grey,
+                              width: 1.0,
+                            ),
+                            borderRadius: BorderRadius.circular(10.0),
+                          ),
+                        ),
+                        inputFormatters: [
+                          FilteringTextInputFormatter.allow(
+                            RegExp(r'^-?\d*$'),
+                          ), // Solo números y un guion al inicio
+                        ],
+                        style: TextStyle(
+                          fontSize: 22,
+                          letterSpacing: 2,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
+                        textAlign: TextAlign.center,
+                        onFieldSubmitted: (_) {
+                          onValidate(setStateDialog);
+                        },
+                      ),
+                      if (errorText != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8),
+                          child: Text(
+                            errorText!,
+                            style: const TextStyle(
+                              color: Colors.red,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(dialogContext).pop(null),
+                      child: const Text('CANCELAR'),
+                    ),
+                    ElevatedButton(
+                      onPressed: () => onValidate(setStateDialog),
+                      child: const Text('OK'),
+                    ),
                   ],
                 ),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.of(context).pop(null),
-                    child: const Text('CANCELAR'),
-                  ),
-                  ElevatedButton(
-                    onPressed: () => setState(onValidate),
-                    child: const Text('OK'),
-                  ),
-                ],
               ),
+            );
+          },
         );
       },
     );
@@ -235,38 +305,146 @@ class _PiecesStepWidgetState extends State<PiecesStepWidget> {
 
   Container searchWidget(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.all(8),
-      padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+      margin: const EdgeInsets.all(6),
+      padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 6),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
         children: [
-          Expanded(
-            child: TextField(
-              controller: _searchController,
-              focusNode: _searchFocusNode,
-              autofocus: true,
-              decoration: InputDecoration(
-                labelText: 'Escanea o ingresa # Tarjeta de Ruta [F1]',
-                suffixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
+          Flexible(
+            flex: 7,
+            child: SizedBox(
+              width: 300,
+              child: TextField(
+                keyboardType: TextInputType.number,
+                controller: _searchController,
+                focusNode: _searchFocusNode,
+                decoration: InputDecoration(
+                  labelText: 'Escanea o ingresa # Tarjeta de Ruta [F1]',
+                  suffixIcon: const Icon(Icons.search),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
+                onSubmitted: (value) {
+                  _onSearchSubmitted(value);
+                  _searchController.clear();
+                  _searchFocusNode.requestFocus();
+                },
               ),
-              onSubmitted: (value) {
-                _onSearchSubmitted(value);
-                _searchController.clear();
-                _searchFocusNode
-                    .requestFocus(); // Mantener el foco tras limpiar
-              },
             ),
           ),
-          const SizedBox(width: 8),
-          ActionButtonsPieces(oncamarePressed: widget.onCameraPressed),
+          const SizedBox(width: 6),
+          ActionButtonsPieces(
+            oncamarePressed: () async {
+              final code = await showQrScannerDialog(context);
+              if (code != null && code.isNotEmpty) {
+                _onSearchSubmitted(code);
+                context.read<ScanHistoryProvider>().addScan(
+                  code: code,
+                  deviceId:
+                      "tuDeviceId", // reemplaza por tu variable/config real
+                  timestamp: DateTime.now(),
+                  deviceModel: "tuModelo",
+                  deviceAlias: "tuAlias",
+                ); // Usa tu handler normal
+              }
+            },
+          ),
+          // ActionButtonsPieces(
+          //   oncamarePressed: () async {
+          //     final code = await showDialog<String>(
+          //       context: context,
+          //       builder:
+          //           (context) => Dialog(
+          //             backgroundColor: Colors.black87,
+          //             shape: RoundedRectangleBorder(
+          //               borderRadius: BorderRadius.circular(20),
+          //             ),
+          //             insetPadding: const EdgeInsets.all(24),
+          //             child: SizedBox(
+          //               width: 340,
+          //               height: 420,
+          //               child: Stack(
+          //                 children: [
+          //                   ScannerWidget(
+          //                     onCodeRead:
+          //                         (code) => Navigator.of(context).pop(code),
+          //                   ),
+          //                   Positioned(
+          //                     top: 8,
+          //                     right: 8,
+          //                     child: IconButton(
+          //                       icon: Icon(
+          //                         Icons.close,
+          //                         color: Colors.white,
+          //                         size: 30,
+          //                       ),
+          //                       onPressed: () => Navigator.of(context).pop(),
+          //                       tooltip: 'Cancelar',
+          //                     ),
+          //                   ),
+          //                 ],
+          //               ),
+          //             ),
+          //           ),
+          //     );
+          //     if (code != null && code.isNotEmpty) {
+          //       // Aquí usas tu flujo normal
+          //       _onSearchSubmitted(
+          //         code,
+          //       ); // O el método que ya uses para validar/buscar y mostrar diálogo de cantidad
+          //     }
+          //   },
+          // ),
+          const SizedBox(width: 6),
+          IconButton(
+            tooltip: 'Historial',
+            icon: Icon(Icons.history, color: Colors.blueAccent),
+            onPressed: () {
+              /* Mostrar el historial */
+            },
+          ),
         ],
       ),
     );
+
+    // return Container(
+    //   margin: const EdgeInsets.all(6),
+    //   padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 6),
+    //   decoration: BoxDecoration(
+    //     color: Theme.of(context).colorScheme.surface,
+    //     borderRadius: BorderRadius.circular(8),
+    //   ),
+    //   child: Row(
+    //     children: [
+    //       Expanded(
+    //         child: TextField(
+    //           keyboardType: TextInputType.number,
+    //           controller: _searchController,
+    //           focusNode: _searchFocusNode,
+    //           autofocus: true,
+    //           decoration: InputDecoration(
+    //             labelText: 'Escanea o ingresa # Tarjeta de Ruta [F1]',
+    //             suffixIcon: const Icon(Icons.search),
+    //             border: OutlineInputBorder(
+    //               borderRadius: BorderRadius.circular(10),
+    //             ),
+    //           ),
+    //           onSubmitted: (value) {
+    //             _onSearchSubmitted(value);
+    //             _searchController.clear();
+    //             _searchFocusNode
+    //                 .requestFocus(); // Mantener el foco tras limpiar
+    //           },
+    //         ),
+    //       ),
+    //       const SizedBox(width: 6),
+    //       ActionButtonsPieces(oncamarePressed: widget.onCameraPressed),
+    //     ],
+    //   ),
+    // );
   }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:vc_taskcontrol/src/providers/app/hour_ranges_provider.dart';
 import 'package:vc_taskcontrol/src/providers/mock_data_provider.dart';
 import 'package:vc_taskcontrol/src/providers/route_data_provider.dart';
 
@@ -11,7 +12,11 @@ class HourRangeGridWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hourRanges = context.watch<MockDataProvider>().hourRanges;
+    // final hourRanges = context.watch<MockDataProvider>().hourRanges;
+    final hourRangesProvider = context.watch<HourRangesProvider>();
+    final hourRanges = hourRangesProvider.hourRanges;
+    final currentShift = hourRangesProvider.currentShift;
+
     final selectedHour = context.watch<RouteDataProvider>().selectedHourRange;
 
     final colorScheme = Theme.of(context).colorScheme;
