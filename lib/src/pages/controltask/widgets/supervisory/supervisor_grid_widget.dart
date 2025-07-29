@@ -65,7 +65,7 @@ class SupervisorGridWidget extends StatelessWidget {
                       const SizedBox(height: 6),
 
                       Text(
-                        supervisor.turno,
+                        supervisor.shift,
                         style: textTheme.bodyMedium!.copyWith(
                           color: colorScheme.secondary,
                           fontWeight: FontWeight.w500,

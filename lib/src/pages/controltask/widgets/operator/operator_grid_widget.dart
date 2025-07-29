@@ -24,13 +24,28 @@ class OperatorGridWidget extends StatelessWidget {
     final selectedOperatorId =
         context.watch<RouteDataProvider>().selectedOperatorId;
 
+    final selectedSectionName =
+        context.watch<RouteDataProvider>().selectedSection?.sectionName;
+
+    final filteredOperators =
+        operators.where((op) => op.sectionName == selectedSectionName).toList();
+
+    if (filteredOperators.isEmpty) {
+      return const Center(
+        child: Text(
+          'No hay operadores disponibles para la sección actual.',
+          style: TextStyle(fontSize: 18, color: Colors.grey),
+        ),
+      );
+    }
+
     return GridView.extent(
       maxCrossAxisExtent: 180,
       mainAxisSpacing: 16,
       crossAxisSpacing: 16,
       padding: const EdgeInsets.all(16),
       children:
-          operators.map((operator) {
+          filteredOperators.map((operator) {
             final isSelected = operator.id == selectedOperatorId;
 
             return GestureDetector(

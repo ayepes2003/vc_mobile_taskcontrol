@@ -12,17 +12,20 @@ class SectionsProvider with ChangeNotifier {
   Future<void> loadSectionsFromApi() async {
     try {
       final response = await dioService.getRequest('/sections');
+      // final response = await dioService.getRequest('/sections_mok');
       print(
         'Base URL actual de Dio: ${dioService.dio.options.baseUrl}/sections',
       );
 
       // Asegúrate que la estructura de la respuesta sea la correcta
+      print(response['data']['data']);
       final dataList =
           (response['data']['data'] as List)
               .map((item) => Section.fromJson(item))
               .toList();
       sections = dataList;
       lastError = null;
+      print(sections);
     } catch (e) {
       lastError = 'Error al cargar sections: $e';
       sections = [];

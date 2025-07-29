@@ -127,12 +127,12 @@ void main() async {
               (_) =>
                   MockDataProvider()
                     ..loadMonitorData()
-                    // ..loadStepsFromJson()
-                    // ..loadSupervisorsFromJson()
-                    // ..loadSectionsFromJson()
-                    ..loadProjectsFromJson()
-                    ..loadHourRangesFromMock(),
-          // ..loadOperatorsFromJson(),
+                    ..loadProjectsFromJson(),
+          // ..loadStepsFromJson() //Mockup Local APi
+          // ..loadSupervisorsFromJson()//Mockup Local AP
+          // ..loadSectionsFromJson()//Mockup Local AP
+          // ..loadHourRangesFromMock(),//Mockup Local AP
+          // ..loadOperatorsFromJson(),//Mockup  Local AP
         ),
       ],
       child: MyApp(router: router),

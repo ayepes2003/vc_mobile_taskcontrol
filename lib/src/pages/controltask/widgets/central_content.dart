@@ -61,7 +61,12 @@ class CentralContent extends StatelessWidget {
         ],
       ),
     );
-    // return Container(
+  }
+}
+
+
+
+// return Container(
     //   width: double.infinity,
     //   color: Colors.white,
     //   // Añade LayoutBuilder para capturar el espacio disponible
@@ -99,5 +104,3 @@ class CentralContent extends StatelessWidget {
     //     },
     //   ),
     // );
-  }
-}

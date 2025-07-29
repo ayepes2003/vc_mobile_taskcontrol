@@ -5,11 +5,14 @@ import 'package:vc_taskcontrol/src/models/routescard/route_card.dart';
 import 'package:vc_taskcontrol/src/models/routescard/route_card_read.dart';
 import 'package:vc_taskcontrol/src/pages/controltask/widgets/actions_buttons/action_pieces_buttons.dart';
 import 'package:vc_taskcontrol/src/pages/controltask/widgets/utils/calculator_widget%20.dart';
-import 'package:vc_taskcontrol/src/pages/controltask/widgets/kpi_count_card.dart';
+import 'package:vc_taskcontrol/src/pages/controltask/widgets/kpi_total/kpi_count_card.dart';
 import 'package:vc_taskcontrol/src/pages/controltask/widgets/routecard/route_card_tablet.dart';
+import 'package:vc_taskcontrol/src/pages/scanner/widgets/scanner_widget.dart';
+import 'package:vc_taskcontrol/src/providers/app/scanner/scan_history.dart';
 import 'package:vc_taskcontrol/src/providers/route_data_provider.dart';
 import 'package:vc_taskcontrol/src/providers/router_card_provider.dart';
 import 'package:vc_taskcontrol/src/storage/preferences/app_preferences.dart';
+import 'package:vc_taskcontrol/src/utils/barcode/dialogs.dart';
 
 class PiecesStepWidget extends StatefulWidget {
   final VoidCallback onCameraPressed;
@@ -334,7 +337,68 @@ class _PiecesStepWidgetState extends State<PiecesStepWidget> {
             ),
           ),
           const SizedBox(width: 6),
-          ActionButtonsPieces(oncamarePressed: widget.onCameraPressed),
+          ActionButtonsPieces(
+            oncamarePressed: () async {
+              final code = await showQrScannerDialog(context);
+              if (code != null && code.isNotEmpty) {
+                _onSearchSubmitted(code);
+                context.read<ScanHistoryProvider>().addScan(
+                  code: code,
+                  deviceId:
+                      "tuDeviceId", // reemplaza por tu variable/config real
+                  timestamp: DateTime.now(),
+                  deviceModel: "tuModelo",
+                  deviceAlias: "tuAlias",
+                ); // Usa tu handler normal
+              }
+            },
+          ),
+          // ActionButtonsPieces(
+          //   oncamarePressed: () async {
+          //     final code = await showDialog<String>(
+          //       context: context,
+          //       builder:
+          //           (context) => Dialog(
+          //             backgroundColor: Colors.black87,
+          //             shape: RoundedRectangleBorder(
+          //               borderRadius: BorderRadius.circular(20),
+          //             ),
+          //             insetPadding: const EdgeInsets.all(24),
+          //             child: SizedBox(
+          //               width: 340,
+          //               height: 420,
+          //               child: Stack(
+          //                 children: [
+          //                   ScannerWidget(
+          //                     onCodeRead:
+          //                         (code) => Navigator.of(context).pop(code),
+          //                   ),
+          //                   Positioned(
+          //                     top: 8,
+          //                     right: 8,
+          //                     child: IconButton(
+          //                       icon: Icon(
+          //                         Icons.close,
+          //                         color: Colors.white,
+          //                         size: 30,
+          //                       ),
+          //                       onPressed: () => Navigator.of(context).pop(),
+          //                       tooltip: 'Cancelar',
+          //                     ),
+          //                   ),
+          //                 ],
+          //               ),
+          //             ),
+          //           ),
+          //     );
+          //     if (code != null && code.isNotEmpty) {
+          //       // Aquí usas tu flujo normal
+          //       _onSearchSubmitted(
+          //         code,
+          //       ); // O el método que ya uses para validar/buscar y mostrar diálogo de cantidad
+          //     }
+          //   },
+          // ),
           const SizedBox(width: 6),
           IconButton(
             tooltip: 'Historial',

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:vc_taskcontrol/src/pages/scanner/scanner_widget.dart';
+import 'package:vc_taskcontrol/src/pages/scanner/widgets/scanner_widget.dart';
 import 'package:vc_taskcontrol/src/providers/app/scanner/scan_history.dart';
+import 'package:vc_taskcontrol/src/utils/barcode/dialogs.dart';
 
 // Importa aquí ScanItem y ScannerWidget según tu estructura
 
@@ -65,45 +66,7 @@ class TestScanPage extends StatelessWidget {
                   textStyle: const TextStyle(fontSize: 18),
                 ),
                 onPressed: () async {
-                  final code = await showDialog<String>(
-                    context: context,
-                    builder:
-                        (context) => Dialog(
-                          backgroundColor: Colors.black87,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          insetPadding: const EdgeInsets.all(24),
-                          child: SizedBox(
-                            width: 340,
-                            height: 420,
-                            child: Stack(
-                              children: [
-                                ScannerWidget(
-                                  onCodeRead: (code) {
-                                    Navigator.of(context).pop(code);
-                                  },
-                                ),
-                                // Botón de cerrar/cancelar
-                                Positioned(
-                                  right: 8,
-                                  top: 8,
-                                  child: IconButton(
-                                    icon: const Icon(
-                                      Icons.close,
-                                      color: Colors.white,
-                                      size: 30,
-                                    ),
-                                    onPressed:
-                                        () => Navigator.of(context).pop(),
-                                    tooltip: 'Cancelar',
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                  );
+                  final code = await showQrScannerDialog(context);
                   if (code != null && code.isNotEmpty) {
                     // Aquí debes pasar los datos de tu dispositivo según lo tengas disponible
                     context.read<ScanHistoryProvider>().addScan(

@@ -13,7 +13,7 @@ class SupervisorsProvider with ChangeNotifier {
   Future<void> loadSupervisorsFromApi() async {
     try {
       print('Base URL actual de Dio: ${dioService.dio.options.baseUrl}');
-      final response = await dioService.getRequest('/supervisors');
+      final response = await dioService.getRequest('/supervisorys');
 
       // Asegúrate que la estructura de la respuesta sea la correcta
       final dataList =

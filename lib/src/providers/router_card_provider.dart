@@ -74,7 +74,7 @@ class RouteCardProvider with ChangeNotifier {
     for (final rc in _routes) {
       if (limpiar(rc.codeProces) == buscado) {
         print(
-          'MATCH ENCONTRADO: "${rc.codeProces} Cantidad de piezas: ${rc.totalPiece}"',
+          'MATCH ENCONTRADO: "${rc.codeProces} Cantidad de piezas: ${rc.initialQuantity}"',
         );
         return rc;
       }
@@ -128,17 +128,17 @@ class RouteCardProvider with ChangeNotifier {
       'tooltip': 'Código de la pieza',
       'icono': Icons.precision_manufacturing_outlined,
     },
-    {
-      'key': 'item',
-      'titulo': 'Item',
-      'ancho': 200.0,
-      'align': TextAlign.left,
-      'colorFondo': Colors.white,
-      'colorTexto': Colors.black,
-      'visible': false,
-      'tooltip': 'Referente a producto/mueble',
-      'icono': Icons.chair_outlined,
-    },
+    // {
+    //   'key': 'item',
+    //   'titulo': 'Item',
+    //   'ancho': 200.0,
+    //   'align': TextAlign.left,
+    //   'colorFondo': Colors.white,
+    //   'colorTexto': Colors.black,
+    //   'visible': false,
+    //   'tooltip': 'Referente a producto/mueble',
+    //   'icono': Icons.chair_outlined,
+    // },
     {
       'key': 'totalPiece',
       'titulo': 'Cant Inicial',
@@ -172,28 +172,28 @@ class RouteCardProvider with ChangeNotifier {
       'tooltip': 'Cantidad ingresada al leer',
       'icono': Icons.edit_outlined,
     },
-    {
-      'key': 'difference',
-      'titulo': 'Faltante',
-      'ancho': 50.0,
-      'align': TextAlign.right,
-      'colorFondo': Colors.white,
-      'colorTexto': Colors.black,
-      'visible': true,
-      'tooltip': 'Diferencia entre estimada y digitada',
-      'icono': Icons.error_outline,
-    },
-    {
-      'key': 'status',
-      'titulo': 'Estado',
-      'ancho': 40.0,
-      'align': TextAlign.center,
-      'colorFondo': Colors.white,
-      'colorTexto': Colors.black,
-      'visible': true,
-      'tooltip': 'Estado de la lectura',
-      'icono': Icons.info_outline,
-    },
+    // {
+    //   'key': 'difference',
+    //   'titulo': 'Faltante',
+    //   'ancho': 50.0,
+    //   'align': TextAlign.right,
+    //   'colorFondo': Colors.white,
+    //   'colorTexto': Colors.black,
+    //   'visible': true,
+    //   'tooltip': 'Diferencia entre estimada y digitada',
+    //   'icono': Icons.error_outline,
+    // },
+    // {
+    //   'key': 'status',
+    //   'titulo': 'Estado',
+    //   'ancho': 40.0,
+    //   'align': TextAlign.center,
+    //   'colorFondo': Colors.white,
+    //   'colorTexto': Colors.black,
+    //   'visible': true,
+    //   'tooltip': 'Estado de la lectura',
+    //   'icono': Icons.info_outline,
+    // },
   ];
 
   List<Map<String, dynamic>> get columnsTabletVisibles {
@@ -211,6 +211,8 @@ class RouteCardProvider with ChangeNotifier {
       case 'quantity':
         return record.card.quantity;
       case 'totalPiece':
+        return record.card.totalPiece;
+      case 'initialQuantity':
         return record.card.totalPiece;
       case 'enteredQuantity':
         return record.enteredQuantity.toString();
