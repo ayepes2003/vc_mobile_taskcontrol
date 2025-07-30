@@ -93,9 +93,7 @@ class CalculatorWidget extends StatelessWidget {
                               context,
                               listen: false,
                             ).clear();
-                            // Opcional: Actualizar display/calculadora u otros estados
-                            // setState(() { displayValue = ''; });
-                            // Muestra un mensaje si quieres feedback al usuario
+
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: Text(

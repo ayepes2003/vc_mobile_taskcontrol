@@ -1,12 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:vc_taskcontrol/src/models/appsettings/tolerance_settings.dart';
 import 'package:vc_taskcontrol/src/models/routescard/route_card.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:csv/csv.dart';
 import 'package:vc_taskcontrol/src/models/routescard/route_card_read.dart';
+import 'package:vc_taskcontrol/src/services/dio_servide.dart';
 
 class RouteCardProvider with ChangeNotifier {
+  final DioService dioService;
+
+  RouteCardProvider(this.dioService);
+
   List<RouteCard> _routes = [];
   bool _isLoading = false;
+  String? lastError;
 
   List<RouteCard> get routes => List.unmodifiable(_routes);
   bool get isLoading => _isLoading;
@@ -14,55 +21,44 @@ class RouteCardProvider with ChangeNotifier {
   final List<RouteCardRead> _recentReads = [];
   List<RouteCardRead> get recentReads => List.unmodifiable(_recentReads);
 
-  /// Cargar las tarjetas de ruta desde un archivo CSV local
-  Future<void> loadRoutesFromCSV() async {
-    _isLoading = true;
-    notifyListeners();
+  int tolerance = 0;
+  int toleranceDifference = 1;
 
+  Future<void> loadRoutesFromApi() async {
     try {
-      final rawData = await rootBundle.loadString('data/card_route_trans.csv');
-      // print(rawData.substring(0, 500));
-      final rowsAsList = const CsvToListConverter(
-        fieldDelimiter: ';',
-        eol: '\r\n',
-      ).convert(rawData);
-
-      if (rowsAsList.isEmpty) {
-        _routes = [];
-        _isLoading = false;
-        print('Cantidad de tarjetas de ruta cargadas: en vacias ');
-        notifyListeners();
-        return;
-      }
-
-      final headers = rowsAsList.first;
-
-      _routes =
-          rowsAsList.skip(1).map((row) {
-            // 1. Convierte los valores a String y garantiza misma longitud que header
-            final fixedRow = List<String>.from(
-              row.map((e) => e?.toString() ?? ''),
-            );
-            while (fixedRow.length < headers.length) {
-              fixedRow.add('');
-            }
-            // 2. En caso de exceso de columnas, ignora las extras
-            final rowData = fixedRow.take(headers.length);
-
-            // 3. Crea el mapa y el modelo normalmente
-            final data = Map<String, dynamic>.fromIterables(
-              headers.map((e) => e.toString()),
-              rowData,
-            );
-            return RouteCard.fromJson(data);
-          }).toList();
+      print('Base URL actual de Dio: ${dioService.dio.options.baseUrl}');
+      final response = await dioService.getRequest('/route-cards-active');
+      final dataList =
+          (response['data']['data'] as List)
+              .map((item) => RouteCard.fromJson(item))
+              .toList();
+      _routes = dataList;
     } catch (e) {
-      print('catch: $e');
+      lastError = 'Error al cargar operators: $e';
       _routes = [];
     }
+    notifyListeners();
+  }
 
-    _isLoading = false;
-    print('Cantidad de tarjetas de ruta cargadas: ${_routes.length}');
+  Future<void> loadToleranceSettings() async {
+    try {
+      final response = await dioService.getRequest('/app-settings/tolerances');
+      if (response['data'] != null &&
+          response['data'] is List &&
+          (response['data'] as List).isNotEmpty) {
+        final tolJson = (response['data'] as List).first;
+        tolerance = tolJson['tolerance'] ?? 0;
+        toleranceDifference = tolJson['toleranceDifference'] ?? 1;
+      } else {
+        // Usa valores por defecto si no hay data
+        tolerance = 0;
+        toleranceDifference = 1;
+      }
+    } catch (e) {
+      // En caso de error, usa valores por defecto
+      tolerance = 0;
+      toleranceDifference = 1;
+    }
     notifyListeners();
   }
 
@@ -242,3 +238,55 @@ class RouteCardProvider with ChangeNotifier {
   // {'titulo': 'Notas B',    'key': 'notesB', ...},
   // {'titulo': '# Piezas Totales',   'key': 'totalPiece', ...},
   // {'titulo': '# Piezas Etiqueta','key': 'labelPiece', ...},
+
+   /// Cargar las tarjetas de ruta desde un archivo CSV local
+// Future<void> loadRoutesFromCSV() async {
+//   _isLoading = true;
+//   notifyListeners();
+
+//   try {
+//     final rawData = await rootBundle.loadString('data/card_route_trans.csv');
+//     // print(rawData.substring(0, 500));
+//     final rowsAsList = const CsvToListConverter(
+//       fieldDelimiter: ';',
+//       eol: '\r\n',
+//     ).convert(rawData);
+
+//     if (rowsAsList.isEmpty) {
+//       _routes = [];
+//       _isLoading = false;
+//       print('Cantidad de tarjetas de ruta cargadas: en vacias ');
+//       notifyListeners();
+//       return;
+//     }
+
+//     final headers = rowsAsList.first;
+
+//     _routes =
+//         rowsAsList.skip(1).map((row) {
+//           // 1. Convierte los valores a String y garantiza misma longitud que header
+//           final fixedRow = List<String>.from(
+//             row.map((e) => e?.toString() ?? ''),
+//           );
+//           while (fixedRow.length < headers.length) {
+//             fixedRow.add('');
+//           }
+//           // 2. En caso de exceso de columnas, ignora las extras
+//           final rowData = fixedRow.take(headers.length);
+
+//           // 3. Crea el mapa y el modelo normalmente
+//           final data = Map<String, dynamic>.fromIterables(
+//             headers.map((e) => e.toString()),
+//             rowData,
+//           );
+//           return RouteCard.fromJson(data);
+//         }).toList();
+//   } catch (e) {
+//     print('catch: $e');
+//     _routes = [];
+//   }
+
+//   _isLoading = false;
+//   print('Cantidad de tarjetas de ruta cargadas: ${_routes.length}');
+//   notifyListeners();
+// }

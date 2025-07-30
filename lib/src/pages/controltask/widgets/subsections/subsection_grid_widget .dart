@@ -18,7 +18,14 @@ class SubsectionGridWidget extends StatelessWidget {
         context.watch<RouteDataProvider>().selectedSubsection;
 
     final subsections = selectedSection?.subsections ?? [];
-
+    if (subsections.isEmpty) {
+      return const Center(
+        child: Text(
+          'No hay centros de trabajo disponibles para la sección actual.',
+          style: TextStyle(fontSize: 18, color: Colors.grey),
+        ),
+      );
+    }
     return GridView.extent(
       maxCrossAxisExtent: 150,
       mainAxisSpacing: 16,

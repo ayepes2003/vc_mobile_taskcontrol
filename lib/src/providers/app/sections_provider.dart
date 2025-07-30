@@ -18,7 +18,7 @@ class SectionsProvider with ChangeNotifier {
       );
 
       // Asegúrate que la estructura de la respuesta sea la correcta
-      print(response['data']['data']);
+      // print(response['data']['data']);
       final dataList =
           (response['data']['data'] as List)
               .map((item) => Section.fromJson(item))

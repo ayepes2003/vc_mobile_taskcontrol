@@ -56,10 +56,16 @@ class _ControltaskBasePageState extends State<ControltaskBasePage> {
     ]);
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       // 🔄 Hidratación de sección y subsección desde SharedPreferences
+      // Provider.of<RouteCardProvider>(
+      //   context,
+      //   listen: false,
+      // ).loadRoutesFromCSV();
+
       Provider.of<RouteCardProvider>(
         context,
         listen: false,
-      ).loadRoutesFromCSV();
+      ).loadRoutesFromApi();
+
       final routeProvider = Provider.of<RouteDataProvider>(
         context,
         listen: false,
@@ -110,10 +116,12 @@ class _ControltaskBasePageState extends State<ControltaskBasePage> {
   Future<void> _handleRefresh(BuildContext context) async {
     await AppPreferences.clearAll();
     Provider.of<RouteDataProvider>(context, listen: false).clear();
+
     Provider.of<SupervisorsProvider>(
       context,
       listen: false,
     ).loadSupervisorsFromApi();
+    //hora hora
     Provider.of<HourRangesProvider>(
       context,
       listen: false,
@@ -124,8 +132,13 @@ class _ControltaskBasePageState extends State<ControltaskBasePage> {
       listen: false,
     ).loadOperatorsFromApi();
 
+    // rutas
+    Provider.of<RouteCardProvider>(context, listen: false).loadRoutesFromApi();
+
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Preferencias y sesión borradas')),
+      const SnackBar(
+        content: Text('Actualizando datos servidor y limpiando sesión'),
+      ),
     );
   }
 

@@ -104,6 +104,13 @@ void main() async {
               (context) =>
                   OperatorsProvider(dioService)..loadOperatorsFromApi(),
         ),
+
+        ChangeNotifierProvider(
+          create:
+              (context) => RouteCardProvider(dioService)..loadRoutesFromApi(),
+        ),
+
+        // ChangeNotifierProvider(create: (_) => RouteCardProvider()),
         ChangeNotifierProvider(
           create: (_) {
             final provider = RouteDataProvider();
@@ -121,7 +128,6 @@ void main() async {
           },
         ),
 
-        ChangeNotifierProvider(create: (_) => RouteCardProvider()),
         ChangeNotifierProvider(
           create:
               (_) =>

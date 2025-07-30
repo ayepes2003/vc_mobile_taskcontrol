@@ -22,6 +22,14 @@ class HourRangeGridWidget extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
+    if (hourRanges.isEmpty) {
+      return const Center(
+        child: Text(
+          'No hay Horarios disponibles para la sección actual.',
+          style: TextStyle(fontSize: 18, color: Colors.grey),
+        ),
+      );
+    }
     return GridView.extent(
       maxCrossAxisExtent: 160,
       mainAxisSpacing: 16,

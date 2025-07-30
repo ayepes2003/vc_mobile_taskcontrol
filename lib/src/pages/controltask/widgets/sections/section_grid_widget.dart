@@ -21,6 +21,15 @@ class SectionGridWidget extends StatelessWidget {
 
     final selectedSection = context.watch<RouteDataProvider>().selectedSection;
 
+    if (sections.isEmpty) {
+      return const Center(
+        child: Text(
+          'No hay secciones disponibles para la sección actual.',
+          style: TextStyle(fontSize: 18, color: Colors.grey),
+        ),
+      );
+    }
+
     return GridView.extent(
       maxCrossAxisExtent: 180,
       mainAxisSpacing: 16,

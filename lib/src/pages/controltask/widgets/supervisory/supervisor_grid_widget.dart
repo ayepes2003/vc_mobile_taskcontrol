@@ -21,6 +21,14 @@ class SupervisorGridWidget extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
+    if (supervisors.isEmpty) {
+      return const Center(
+        child: Text(
+          'No hay Supervisores disponibles para registrar tareas.',
+          style: TextStyle(fontSize: 18, color: Colors.grey),
+        ),
+      );
+    }
     return GridView.extent(
       maxCrossAxisExtent: 180,
       mainAxisSpacing: 16,

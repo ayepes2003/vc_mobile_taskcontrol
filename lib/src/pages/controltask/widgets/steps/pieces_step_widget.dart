@@ -45,19 +45,22 @@ class _PiecesStepWidgetState extends State<PiecesStepWidget> {
     final provider = Provider.of<RouteCardProvider>(context, listen: false);
     final resultado = provider.findByCodeProces(code.trim());
 
-    //   'Buscando: $code, Encontrado: ${resultado != null ? resultado.codeProces : 'null'}',
-    // );
     setState(() {
       _resultado = resultado;
     });
 
     if (resultado != null) {
       final int estimated = int.tryParse(resultado.totalPiece ?? '0') ?? 0;
-      const int tolerance = 0; //5 pon el valor que necesitas
+      // const int tolerance = 0; //5 pon el valor que necesitas
+      final tolerance = provider.tolerance; //provider, cacheado o por defecto
+      final toleranceDifference =
+          provider.toleranceDifference; // desde provider
+
       String? cantidadStr = await showQuantityDialog(
         context,
         estimated,
         tolerance,
+        toleranceDifference,
       );
 
       if (cantidadStr != null && cantidadStr.isNotEmpty) {
@@ -73,9 +76,6 @@ class _PiecesStepWidgetState extends State<PiecesStepWidget> {
           context,
           listen: false,
         ).setRealQuantity(cantidad);
-        // print(
-        //   "DEBUG: Supervisor tras búsqueda de ruta NO debería cambiar: ${Provider.of<RouteStaticDataProvider>(context, listen: false).supervisor}",
-        // );
         provider.addRead(resultado, cantidad);
       }
     }
@@ -85,29 +85,58 @@ class _PiecesStepWidgetState extends State<PiecesStepWidget> {
     BuildContext context,
     int estimated,
     int tolerance,
+    int toleranceDifference,
   ) async {
     final controller = TextEditingController();
     final focusNode = FocusNode();
     String? errorText;
+    // Define esta variable con el valor que se quiera permitir
+    final int toleranceDifference = 1;
 
     void onValidate(StateSetter setStateDialog) {
       final val = controller.text.trim();
       final parsed = int.tryParse(val);
-      if (val.isEmpty || parsed == null || parsed == 0) {
+
+      if (val.isEmpty || parsed == null || parsed <= 0) {
         errorText = "Ingrese un número válido mayor que cero";
         controller.clear();
         focusNode.requestFocus();
-      } else if (parsed > estimated + tolerance) {
+      } else if (parsed > estimated) {
+        errorText = "No puede ser mayor que la cantidad inicial ($estimated).";
+        controller.clear();
+        focusNode.requestFocus();
+      } else if ((estimated - parsed) != toleranceDifference) {
         errorText =
-            "La cantidad reportada es superior a la inicial (máx: ${estimated + tolerance}).";
+            "Debe ser exactamente $toleranceDifference menos que la inicial ($estimated): es decir, ${estimated - toleranceDifference}.";
         controller.clear();
         focusNode.requestFocus();
       } else {
         Navigator.of(context).pop(val);
         return;
       }
-      setStateDialog(() {}); // Redibuja el dialog solo cuando cambian errores.
+      setStateDialog(() {});
     }
+
+    // void onValidate(StateSetter setStateDialog) {
+    //   final val = controller.text.trim();
+    //   final parsed = int.tryParse(val);
+    //   if (val.isEmpty || parsed == null || parsed == 0) {
+    //     errorText = "Ingrese un número válido mayor que cero";
+    //     controller.clear();
+    //     focusNode.requestFocus();
+    //     // + tolerance
+    //     //validacion de cantidad
+    //   } else if (parsed > estimated) {
+    //     errorText =
+    //         "La cantidad reportada es superior a la inicial (máx: ${estimated + tolerance}).";
+    //     controller.clear();
+    //     focusNode.requestFocus();
+    //   } else {
+    //     Navigator.of(context).pop(val);
+    //     return;
+    //   }
+    //   setStateDialog(() {}); // Redibuja el dialog solo cuando cambian errores.
+    // }
 
     return await showDialog<String>(
       context: context,
