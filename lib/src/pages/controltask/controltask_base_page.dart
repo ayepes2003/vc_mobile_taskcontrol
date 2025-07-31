@@ -136,6 +136,15 @@ class _ControltaskBasePageState extends State<ControltaskBasePage> {
     // rutas
     Provider.of<RouteCardProvider>(context, listen: false).loadRoutesFromApi();
     await RouteDatabase().clearAllReads();
+    // await Provider.of<RouteCardProvider>(
+    //   context,
+    //   listen: false,
+    // ).loadRoutesFromLocal();
+
+    await Provider.of<RouteCardProvider>(
+      context,
+      listen: false,
+    ).loadRecentReads();
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Actualizando datos servidor y limpiando sesión'),
