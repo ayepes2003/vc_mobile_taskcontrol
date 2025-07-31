@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:vc_taskcontrol/src/models/routescard/route_card.dart';
 import 'package:vc_taskcontrol/src/models/routescard/route_card_read.dart';
+// import 'package:vc_taskcontrol/src/models/routescard/route_read_record.dart';
 import 'package:vc_taskcontrol/src/services/dio_servide.dart';
 import 'package:vc_taskcontrol/src/storage/routes/route_database.dart';
 
@@ -11,6 +12,7 @@ class RouteCardProvider with ChangeNotifier {
   RouteCardProvider(this.dioService);
 
   // Estado y data
+
   List<RouteCard> _routes = [];
   List<RouteCardRead> _recentReads = [];
   bool _isLoading = false;
@@ -199,6 +201,58 @@ class RouteCardProvider with ChangeNotifier {
     }
     print('No match found after cleaning');
     return null;
+  }
+
+  /// Última lectura registrada (si existe)
+  RouteCardRead? get lastRead {
+    if (_recentReads.isEmpty) return null;
+    return _recentReads.last;
+  }
+
+  /// Tarjeta relacionada con la última lectura registrada
+  RouteCard? get lastReadCard {
+    final last = lastRead;
+    if (last == null) return null;
+    return last.card;
+  }
+
+  /// Cantidad estimada (initialQuantity) de la última tarjeta leída
+  int get estimatedQuantity {
+    final card = lastReadCard;
+    if (card == null) return 0;
+    // Convierte string a int con seguridad
+    return int.tryParse(card.initialQuantity) ?? 0;
+  }
+
+  /// Cantidad real leída en la última lectura
+  int get realQuantity {
+    final last = lastRead;
+    if (last == null) return 0;
+    return last.enteredQuantity;
+  }
+
+  /// Diferencia entre cantidad estimada y real, para la última tarjeta leída
+  int get difference {
+    final estimated = estimatedQuantity;
+    final realAccum = realQuantityAccumulated;
+
+    int diff = estimated - realAccum;
+    return diff < 0 ? 0 : diff; // evitar negativos, opcional
+  }
+
+  int get realQuantityAccumulated {
+    final card = lastReadCard;
+    if (card == null) return 0;
+
+    final code = card.codeProces;
+    if (code == null) return 0;
+
+    // Sumar todas las cantidades digitadas para esta tarjeta (codeProces)
+    final sum = _recentReads
+        .where((read) => read.card?.codeProces == code)
+        .fold(0, (prev, read) => prev + read.enteredQuantity);
+
+    return sum;
   }
 
   /// Limpiar rutas cargadas en memoria

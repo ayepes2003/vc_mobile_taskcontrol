@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:vc_taskcontrol/src/providers/app/routercard/route_data_provider.dart';
+import 'package:vc_taskcontrol/src/providers/app/routercard/router_card_provider.dart';
 
 class SummaryCardWidget extends StatelessWidget {
   // final int? realQuantity;
@@ -16,9 +17,18 @@ class SummaryCardWidget extends StatelessWidget {
     // Recupera los datos desde el Provider
     final routeData = context.watch<RouteDataProvider>();
     final realQuantity = context.watch<RouteDataProvider>().realQuantity;
-    final String project = routeData.projectName?.trim() ?? 'Sin proyecto';
+
     final int estimatedQuantity = routeData.totalPieces ?? 0;
     final int difference = (realQuantity ?? 0) - estimatedQuantity;
+
+    // cantidades por ultima ruta leida
+    final provider = Provider.of<RouteCardProvider>(context);
+    final int estimated = provider.estimatedQuantity;
+    final int real = provider.realQuantityAccumulated;
+    final int diff = provider.difference;
+
+    final String project = routeData.projectName?.trim() ?? 'Sin proyecto';
+
     final String supervisor = routeData.supervisor?.trim() ?? '—';
     final String operatorName = routeData.operatorName?.trim() ?? '—';
     final String section = routeData.section?.trim() ?? '—';
@@ -70,20 +80,12 @@ class SummaryCardWidget extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Text("CANTIDAD", style: textTheme.titleMedium),
-                  _buildSummaryRow(
-                    context,
-                    "Estimada",
-                    estimatedQuantity.toString(),
-                  ),
-                  _buildSummaryRow(
-                    context,
-                    "Real",
-                    (realQuantity ?? "-").toString(),
-                  ),
+                  _buildSummaryRow(context, "Inicial", estimated.toString()),
+                  _buildSummaryRow(context, "Real", (real ?? "-").toString()),
                   _buildSummaryRow(
                     context,
                     "Faltante",
-                    difference.toString(),
+                    diff.toString(),
                     highlight: difference > 0,
                   ),
                 ],

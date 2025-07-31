@@ -2,29 +2,27 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:vc_taskcontrol/src/providers/app/routercard/route_data_provider.dart';
 import 'package:vc_taskcontrol/src/providers/app/routercard/router_card_provider.dart';
+import 'dart:math'; // para usar max
 
 class KPICountsWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<RouteCardProvider>(context);
-    // final selectedSectionName = provider.selectedSection?.sectionName;
     final selectedSectionName =
         context.watch<RouteDataProvider>().selectedSection?.sectionName;
 
-    // Filtrar rutas y lecturas por el nombre de la sección seleccionada
-    // final routesFiltered =
-    //     selectedSectionName == null
-    //         ? []
-    //         : provider.routes
-    //             .where((route) => route.sectionName == selectedSectionName)
-    //             .toList();
+    // Nota: si quieres activar filtro por sección,
+    // implementa la lógica para filtrar provider.routes y provider.recentReads por sección aquí
 
     final int totalLoaded = provider.routes.length;
     final int totalRead = provider.recentReads.length;
-    final int totalPending = totalLoaded - totalRead;
+
+    // Evitar valor negativo en pendientes:
+    final int totalPending = max(0, totalLoaded - totalRead);
 
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [

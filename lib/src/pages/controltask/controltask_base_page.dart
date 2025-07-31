@@ -158,8 +158,8 @@ class _ControltaskBasePageState extends State<ControltaskBasePage> {
     final stepsProvider = Provider.of<StepsProvider>(context);
     final List<StepConfig> steps = stepsProvider.steps;
 
-    final supervisorsProvider = Provider.of<SupervisorsProvider>(context);
-    final List<Supervisor> supervisors = supervisorsProvider.supervisors;
+    // final supervisorsProvider = Provider.of<SupervisorsProvider>(context);
+    // final List<Supervisor> supervisors = supervisorsProvider.supervisors;
 
     // final List<StepConfig> steps = dataProvider.steps;
     // final List<Supervisor> supervisors = dataProvider.supervisors;
