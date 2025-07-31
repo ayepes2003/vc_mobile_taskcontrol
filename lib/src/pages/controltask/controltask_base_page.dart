@@ -55,13 +55,14 @@ class _ControltaskBasePageState extends State<ControltaskBasePage> {
       DeviceOrientation.landscapeLeft,
       DeviceOrientation.landscapeRight,
     ]);
+
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       // 🔄 Hidratación de sección y subsección desde SharedPreferences
       // Provider.of<RouteCardProvider>(
       //   context,
       //   listen: false,
       // ).loadRoutesFromCSV();
-
+      filterInitialize(context);
       Provider.of<RouteCardProvider>(
         context,
         listen: false,
@@ -90,6 +91,7 @@ class _ControltaskBasePageState extends State<ControltaskBasePage> {
         }
       }
     });
+    WidgetsBinding.instance.addPostFrameCallback((_) async {});
   }
 
   @override
@@ -149,6 +151,22 @@ class _ControltaskBasePageState extends State<ControltaskBasePage> {
       const SnackBar(
         content: Text('Actualizando datos servidor y limpiando sesión'),
       ),
+    );
+  }
+
+  void filterInitialize(BuildContext context) {
+    final provider = Provider.of<RouteDataProvider>(context, listen: false);
+    provider.hydrateFromPrefs(
+      project: AppPreferences.getProject(),
+      section: AppPreferences.getSection(),
+      subsection: AppPreferences.getSubsection(),
+      supervisor: AppPreferences.getSupervisor(),
+      operatorName: AppPreferences.getOperator(),
+      estimatedQuantity: int.tryParse(
+        AppPreferences.getEstimatedQuantity() ?? '',
+      ),
+      shiftName: null, // agrega aquí campos si tienes más guardados
+      selectedHourRange: null,
     );
   }
 
@@ -338,46 +356,3 @@ class _ControltaskBasePageState extends State<ControltaskBasePage> {
     );
   }
 }
-
-
- //   ElevatedButton.icon(
-                    //     icon: Icon(Icons.refresh, color: Colors.red),
-                    //     // icon: Icon(Icons.delete_forever, color: Colors.red),
-                    //     style: ElevatedButton.styleFrom(
-                    //       backgroundColor: Colors.white,
-                    //       foregroundColor: Colors.red,
-                    //     ),
-                    //     label: Text('Refresh'),
-                    //     onPressed: () async {
-                    //       await AppPreferences.clearAll();
-                    //       // Provider.of<RouteDataProvider>(
-                    //       //   context,
-                    //       //   listen: false,
-                    //       // ).clear();
-                    //       Provider.of<SupervisorsProvider>(
-                    //         context,
-                    //         listen: false,
-                    //       ).loadSupervisorsFromApi();
-
-                    //       Provider.of<HourRangesProvider>(
-                    //         context,
-                    //         listen: false,
-                    //       ).loadHourRangesFromApi();
-
-                    //       Provider.of<SectionsProvider>(
-                    //         context,
-                    //         listen: false,
-                    //       ).loadSectionsFromApi();
-
-                    //       Provider.of<OperatorsProvider>(
-                    //         context,
-                    //         listen: false,
-                    //       ).loadOperatorsFromApi();
-
-                    //       ScaffoldMessenger.of(context).showSnackBar(
-                    //         SnackBar(
-                    //           content: Text('Preferencias y sesión borradas'),
-                    //         ),
-                    //       );
-                    //     },
-                    //   ),
