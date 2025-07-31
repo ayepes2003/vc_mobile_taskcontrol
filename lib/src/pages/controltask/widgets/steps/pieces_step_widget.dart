@@ -32,6 +32,11 @@ class _PiecesStepWidgetState extends State<PiecesStepWidget> {
   @override
   void initState() {
     super.initState();
+    Future.microtask(() async {
+      final provider = Provider.of<RouteCardProvider>(context, listen: false);
+      provider.loadRoutesFromLocal();
+      await provider.loadRecentReads();
+    });
     _searchController = TextEditingController();
     _searchFocusNode = FocusNode();
   }
@@ -250,6 +255,20 @@ class _PiecesStepWidgetState extends State<PiecesStepWidget> {
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<RouteCardProvider>(context);
+    if (provider.isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    final routes = provider.routes;
+    final recentReads = provider.recentReads;
+
+    if (routes.isEmpty && recentReads.isEmpty) {
+      return const Center(
+        child: Text(
+          'No hay registros de Tarjetas de Ruta disponibles.',
+          style: TextStyle(fontSize: 18, color: Colors.grey),
+        ),
+      );
+    }
     final columns =
         provider.columnsTabletVisibles; // Columnas con configuración
     final rows = provider.recentReadsLimited; // Los últimos 50 registros leídos
