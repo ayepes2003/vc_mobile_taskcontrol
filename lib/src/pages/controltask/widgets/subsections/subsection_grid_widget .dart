@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:vc_taskcontrol/src/providers/route_data_provider.dart';
+import 'package:vc_taskcontrol/src/providers/app/routercard/route_data_provider.dart';
 
 class SubsectionGridWidget extends StatelessWidget {
   final ValueChanged<String> onSelected;
@@ -18,7 +18,14 @@ class SubsectionGridWidget extends StatelessWidget {
         context.watch<RouteDataProvider>().selectedSubsection;
 
     final subsections = selectedSection?.subsections ?? [];
-
+    if (subsections.isEmpty) {
+      return const Center(
+        child: Text(
+          'No hay centros de trabajo disponibles para la sección actual.',
+          style: TextStyle(fontSize: 18, color: Colors.grey),
+        ),
+      );
+    }
     return GridView.extent(
       maxCrossAxisExtent: 150,
       mainAxisSpacing: 16,

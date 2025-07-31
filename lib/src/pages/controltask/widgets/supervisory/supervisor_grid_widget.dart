@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:vc_taskcontrol/src/models/supervisor.dart';
-import 'package:vc_taskcontrol/src/providers/app/supervisors_provider.dart';
-import 'package:vc_taskcontrol/src/providers/route_data_provider.dart';
+import 'package:vc_taskcontrol/src/providers/app/routercard/supervisors_provider.dart';
+import 'package:vc_taskcontrol/src/providers/app/routercard/route_data_provider.dart';
 
 class SupervisorGridWidget extends StatelessWidget {
   final ValueChanged<Supervisor> onSelected;
@@ -21,6 +21,14 @@ class SupervisorGridWidget extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
+    if (supervisors.isEmpty) {
+      return const Center(
+        child: Text(
+          'No hay Supervisores disponibles para registrar tareas.',
+          style: TextStyle(fontSize: 18, color: Colors.grey),
+        ),
+      );
+    }
     return GridView.extent(
       maxCrossAxisExtent: 180,
       mainAxisSpacing: 16,

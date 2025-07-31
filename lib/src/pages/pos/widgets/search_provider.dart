@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../providers/product_provider.dart';
-import '../../../providers/table_provider.dart';
+import 'package:vc_taskcontrol/src/providers/pos/product_provider.dart';
+import 'package:vc_taskcontrol/src/providers/pos/table_provider.dart';
 
 class SearchProvider with ChangeNotifier {
   String _searchValue = '';

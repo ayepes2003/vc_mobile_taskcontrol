@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:vc_taskcontrol/src/providers/app/hour_ranges_provider.dart';
-import 'package:vc_taskcontrol/src/providers/mock_data_provider.dart';
-import 'package:vc_taskcontrol/src/providers/route_data_provider.dart';
+import 'package:vc_taskcontrol/src/providers/app/routercard/hour_ranges_provider.dart';
+import 'package:vc_taskcontrol/src/providers/app/routercard/route_data_provider.dart';
 
 class HourRangeGridWidget extends StatelessWidget {
   final ValueChanged<String> onSelected;
@@ -22,6 +21,14 @@ class HourRangeGridWidget extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
+    if (hourRanges.isEmpty) {
+      return const Center(
+        child: Text(
+          'No hay Horarios disponibles para la sección actual.',
+          style: TextStyle(fontSize: 18, color: Colors.grey),
+        ),
+      );
+    }
     return GridView.extent(
       maxCrossAxisExtent: 160,
       mainAxisSpacing: 16,

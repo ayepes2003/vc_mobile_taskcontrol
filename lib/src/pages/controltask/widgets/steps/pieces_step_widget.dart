@@ -4,13 +4,14 @@ import 'package:flutter/services.dart';
 import 'package:vc_taskcontrol/src/models/routescard/route_card.dart';
 import 'package:vc_taskcontrol/src/models/routescard/route_card_read.dart';
 import 'package:vc_taskcontrol/src/pages/controltask/widgets/actions_buttons/action_pieces_buttons.dart';
-import 'package:vc_taskcontrol/src/pages/controltask/widgets/utils/calculator_widget%20.dart';
 import 'package:vc_taskcontrol/src/pages/controltask/widgets/kpi_total/kpi_count_card.dart';
 import 'package:vc_taskcontrol/src/pages/controltask/widgets/routecard/route_card_tablet.dart';
-import 'package:vc_taskcontrol/src/pages/scanner/widgets/scanner_widget.dart';
+import 'package:vc_taskcontrol/src/providers/app/routercard/route_data_provider.dart';
+import 'package:vc_taskcontrol/src/providers/app/routercard/router_card_provider.dart';
+// import 'package:vc_taskcontrol/src/pages/scanner/widgets/scanner_widget.dart';
 import 'package:vc_taskcontrol/src/providers/app/scanner/scan_history.dart';
-import 'package:vc_taskcontrol/src/providers/route_data_provider.dart';
-import 'package:vc_taskcontrol/src/providers/router_card_provider.dart';
+// import 'package:vc_taskcontrol/src/pages/controltask/widgets/utils/calculator_widget%20.dart';
+
 import 'package:vc_taskcontrol/src/storage/preferences/app_preferences.dart';
 import 'package:vc_taskcontrol/src/utils/barcode/dialogs.dart';
 
@@ -45,83 +46,100 @@ class _PiecesStepWidgetState extends State<PiecesStepWidget> {
     final provider = Provider.of<RouteCardProvider>(context, listen: false);
     final resultado = provider.findByCodeProces(code.trim());
 
-    //   'Buscando: $code, Encontrado: ${resultado != null ? resultado.codeProces : 'null'}',
-    // );
     setState(() {
       _resultado = resultado;
     });
 
     if (resultado != null) {
-      final int estimated = int.tryParse(resultado.totalPiece ?? '0') ?? 0;
-      const int tolerance = 0; //5 pon el valor que necesitas
-      String? cantidadStr = await showQuantityDialog(
+      final int initialQuantity =
+          int.tryParse(resultado.totalPiece ?? '0') ?? 0;
+
+      final int registeredQuantity = await provider.getTotalRegisteredQuantity(
+        resultado.codeProces,
+      );
+      final tolerance = provider.tolerance;
+      final toleranceDifference = provider.toleranceDifference;
+      final int remaining = initialQuantity - registeredQuantity;
+      if (remaining <= 0) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Cantidad ya completada. No se pueden añadir más.'),
+          ),
+        );
+        return;
+      }
+
+      final cantidadStr = await showQuantityDialog(
         context,
-        estimated,
+        initialQuantity,
+        registeredQuantity,
         tolerance,
+        toleranceDifference,
       );
 
       if (cantidadStr != null && cantidadStr.isNotEmpty) {
         int cantidad = int.tryParse(cantidadStr) ?? 0;
+
         await AppPreferences.setProject(resultado.projectName);
 
         Provider.of<RouteDataProvider>(context, listen: false).setFromRoute(
           project: resultado.projectName,
-          itemCode: resultado.item,
-          totalPiece: int.tryParse(resultado.totalPiece ?? '0') ?? 0,
+          itemCode: resultado.itemCode,
+          totalPiece: initialQuantity,
         );
         Provider.of<RouteDataProvider>(
           context,
           listen: false,
         ).setRealQuantity(cantidad);
-        // print(
-        //   "DEBUG: Supervisor tras búsqueda de ruta NO debería cambiar: ${Provider.of<RouteStaticDataProvider>(context, listen: false).supervisor}",
-        // );
         provider.addRead(resultado, cantidad);
+        await provider.addReadLocal(resultado, cantidad);
       }
     }
   }
 
   Future<String?> showQuantityDialog(
     BuildContext context,
-    int estimated,
+    int initialQuantity, // Cantidad estimada o inicial total
+    int registeredQuantity, // Sumatoria ya registrada guardada en DB
     int tolerance,
+    int toleranceDifference,
   ) async {
     final controller = TextEditingController();
     final focusNode = FocusNode();
     String? errorText;
 
+    // Calculamos la diferencia (lo que falta registrar)
+    final int remainingQuantity = initialQuantity - registeredQuantity;
+
     void onValidate(StateSetter setStateDialog) {
       final val = controller.text.trim();
       final parsed = int.tryParse(val);
-      if (val.isEmpty || parsed == null || parsed == 0) {
+
+      if (val.isEmpty || parsed == null || parsed <= 0) {
         errorText = "Ingrese un número válido mayor que cero";
-        controller.clear();
+        setStateDialog(() {});
         focusNode.requestFocus();
-      } else if (parsed > estimated + tolerance) {
+      } else if (parsed > remainingQuantity) {
         errorText =
-            "La cantidad reportada es superior a la inicial (máx: ${estimated + tolerance}).";
-        controller.clear();
+            "No puede ser mayor que la cantidad restante por registrar ($remainingQuantity).";
+        setStateDialog(() {});
         focusNode.requestFocus();
       } else {
+        // Entrada válida: cierra el diálogo y retorna el valor
         Navigator.of(context).pop(val);
-        return;
       }
-      setStateDialog(() {}); // Redibuja el dialog solo cuando cambian errores.
     }
 
     return await showDialog<String>(
       context: context,
-      barrierDismissible: false, // Obliga a pulsar cancelar u OK
+      barrierDismissible: false,
       builder: (BuildContext dialogContext) {
         return StatefulBuilder(
           builder: (context, setStateDialog) {
-            // Este scroll y safearea aseguran que el teclado jamás tape el campo/botones
             return SafeArea(
               child: SingleChildScrollView(
                 padding: EdgeInsets.only(
-                  bottom:
-                      MediaQuery.of(context).viewInsets.bottom +
-                      20, // Ajusta si hay teclado
+                  bottom: MediaQuery.of(context).viewInsets.bottom + 20,
                   top: 20,
                   left: 24,
                   right: 24,
@@ -130,38 +148,36 @@ class _PiecesStepWidgetState extends State<PiecesStepWidget> {
                   title: const Text('Ingrese cantidad'),
                   content: Column(
                     mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Máximo permitido: ${estimated + tolerance}',
-                        style: TextStyle(
-                          color: Colors.orange,
-                          fontWeight: FontWeight.w500,
+                        'Cantidad inicial: $initialQuantity',
+                        style: const TextStyle(
+                          color: Colors.blueAccent,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
+                      Text(
+                        'Cantidad registrada: $registeredQuantity',
+                        style: const TextStyle(
+                          color: Colors.grey,
                           fontSize: 13,
                         ),
                       ),
+                      Text(
+                        'Cantidad restante: $remainingQuantity',
+                        style: const TextStyle(
+                          color: Colors.orange,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                        ),
+                      ),
                       const SizedBox(height: 10),
-                      // TextFormField(
-                      //   controller: controller,
-                      //   focusNode: focusNode,
-                      //   keyboardType: TextInputType.numberWithOptions(
-                      //     signed: true,
-                      //   ),
-                      //   autofocus: true,
-                      //   decoration: InputDecoration(
-                      //     hintText: 'Cantidad',
-                      //     border: const OutlineInputBorder(),
-                      //     errorText: errorText,
-                      //   ),
-                      //   onFieldSubmitted: (_) {
-                      //     onValidate(setStateDialog);
-                      //   },
-                      // ),
                       TextFormField(
                         controller: controller,
                         focusNode: focusNode,
-                        keyboardType: TextInputType.numberWithOptions(
-                          signed: true,
-                        ), // Permite negativo/guion
+                        keyboardType: TextInputType.number,
                         autofocus: true,
                         decoration: InputDecoration(
                           hintText: 'Cantidad',
@@ -186,11 +202,9 @@ class _PiecesStepWidgetState extends State<PiecesStepWidget> {
                           ),
                         ),
                         inputFormatters: [
-                          FilteringTextInputFormatter.allow(
-                            RegExp(r'^-?\d*$'),
-                          ), // Solo números y un guion al inicio
+                          FilteringTextInputFormatter.digitsOnly,
                         ],
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 22,
                           letterSpacing: 2,
                           fontWeight: FontWeight.bold,

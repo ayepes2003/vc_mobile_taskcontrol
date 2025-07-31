@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:vc_taskcontrol/src/providers/route_data_provider.dart';
+import 'package:vc_taskcontrol/src/providers/app/routercard/route_data_provider.dart';
 import 'package:vc_taskcontrol/src/storage/preferences/app_preferences.dart';
 
 class CalculatorWidget extends StatelessWidget {
@@ -93,9 +93,7 @@ class CalculatorWidget extends StatelessWidget {
                               context,
                               listen: false,
                             ).clear();
-                            // Opcional: Actualizar display/calculadora u otros estados
-                            // setState(() { displayValue = ''; });
-                            // Muestra un mensaje si quieres feedback al usuario
+
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: Text(

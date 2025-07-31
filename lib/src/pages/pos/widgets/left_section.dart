@@ -2,8 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:vc_taskcontrol/src/pages/pos/widgets/search_pos_field.dart';
 import 'package:vc_taskcontrol/src/pages/pos/widgets/search_provider.dart';
-
-import 'package:vc_taskcontrol/src/providers/table_provider.dart';
+import 'package:vc_taskcontrol/src/providers/pos/table_provider.dart';
 import 'package:vc_taskcontrol/src/services/api_config_service.dart';
 import 'package:vc_taskcontrol/src/services/connection_provider.dart';
 import 'package:vc_taskcontrol/src/services/dio_servide.dart';

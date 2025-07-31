@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:vc_taskcontrol/src/models/routescard/route_card_read.dart';
-import 'package:vc_taskcontrol/src/providers/router_card_provider.dart';
+import 'package:vc_taskcontrol/src/providers/app/routercard/router_card_provider.dart';
 
 class RouteCardTablet extends StatelessWidget {
   final List<Map<String, dynamic>> columns; // columnasTablet del provider

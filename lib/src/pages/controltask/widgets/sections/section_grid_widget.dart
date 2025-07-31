@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:vc_taskcontrol/src/models/section.dart';
-import 'package:vc_taskcontrol/src/providers/app/sections_provider.dart';
-// import 'package:vc_taskcontrol/src/providers/mock_data_provider.dart';
-import 'package:vc_taskcontrol/src/providers/route_data_provider.dart';
+import 'package:vc_taskcontrol/src/providers/app/routercard/route_data_provider.dart';
+import 'package:vc_taskcontrol/src/providers/app/routercard/sections_provider.dart';
 
 class SectionGridWidget extends StatelessWidget {
   final ValueChanged<Section> onSelected;
@@ -20,6 +19,15 @@ class SectionGridWidget extends StatelessWidget {
     final sections = context.watch<SectionsProvider>().sections;
 
     final selectedSection = context.watch<RouteDataProvider>().selectedSection;
+
+    if (sections.isEmpty) {
+      return const Center(
+        child: Text(
+          'No hay secciones disponibles para la sección actual.',
+          style: TextStyle(fontSize: 18, color: Colors.grey),
+        ),
+      );
+    }
 
     return GridView.extent(
       maxCrossAxisExtent: 180,

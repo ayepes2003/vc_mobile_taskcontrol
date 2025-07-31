@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:vc_taskcontrol/src/providers/route_data_provider.dart';
-import 'package:vc_taskcontrol/src/providers/router_card_provider.dart';
+import 'package:vc_taskcontrol/src/providers/app/routercard/route_data_provider.dart';
+import 'package:vc_taskcontrol/src/providers/app/routercard/router_card_provider.dart';
 
 class LastEntryWidget extends StatelessWidget {
   const LastEntryWidget({Key? key}) : super(key: key);
@@ -96,10 +96,10 @@ class LastEntryWidget extends StatelessWidget {
             // buildEntryRow('Operario', routeData.operatorName ?? '-'),
             // buildEntryRow('Sección', routeData.section ?? '-'),
             // buildEntryRow('Subsección', routeData.subsection ?? '-'),
-            buildEntryRow('Producto', lastRead.card.item ?? '-'),
+            buildEntryRow('Producto', lastRead.card?.itemCode ?? '-'),
             buildEntryRow(
               'Descripción',
-              lastRead.card.descriptionMaterial ?? '-',
+              lastRead.card?.descriptionMaterial ?? '-',
             ),
             // buildEntryRow(
             //   'Cantidad digitada',
