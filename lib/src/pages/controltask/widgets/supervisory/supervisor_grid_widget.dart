@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:vc_taskcontrol/src/models/supervisor.dart';
-import 'package:vc_taskcontrol/src/providers/app/supervisors_provider.dart';
-import 'package:vc_taskcontrol/src/providers/route_data_provider.dart';
+import 'package:vc_taskcontrol/src/providers/app/routercard/supervisors_provider.dart';
+import 'package:vc_taskcontrol/src/providers/app/routercard/route_data_provider.dart';
 
 class SupervisorGridWidget extends StatelessWidget {
   final ValueChanged<Supervisor> onSelected;

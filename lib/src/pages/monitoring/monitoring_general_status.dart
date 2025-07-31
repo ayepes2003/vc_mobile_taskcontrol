@@ -6,7 +6,7 @@ import 'package:vc_taskcontrol/src/pages/monitoring/monitor_general_data_source.
 import 'package:vc_taskcontrol/src/services/connection_provider.dart';
 import 'package:vc_taskcontrol/src/widgets/custom_app_bar.dart';
 import 'package:syncfusion_flutter_datagrid/datagrid.dart';
-import 'package:vc_taskcontrol/src/providers/mock_data_provider.dart';
+import 'package:vc_taskcontrol/src/providers/app/routercard/mock_data_provider.dart';
 
 class MonitoringGeneralStatusPage extends StatelessWidget {
   const MonitoringGeneralStatusPage({Key? key}) : super(key: key);

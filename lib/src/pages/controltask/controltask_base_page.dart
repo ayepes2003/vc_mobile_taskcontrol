@@ -10,16 +10,17 @@ import 'package:vc_taskcontrol/src/models/stepconfig.dart';
 import 'package:vc_taskcontrol/src/models/supervisor.dart' show Supervisor;
 import 'package:vc_taskcontrol/src/pages/controltask/widgets/central_content.dart';
 import 'package:vc_taskcontrol/src/pages/controltask/widgets/menus/side_menu_widget.dart';
-import 'package:vc_taskcontrol/src/providers/app/hour_ranges_provider.dart';
-import 'package:vc_taskcontrol/src/providers/app/operators_provider.dart';
-import 'package:vc_taskcontrol/src/providers/app/sections_provider.dart';
-import 'package:vc_taskcontrol/src/providers/app/steps_provider.dart';
-import 'package:vc_taskcontrol/src/providers/app/supervisors_provider.dart';
-import 'package:vc_taskcontrol/src/providers/mock_data_provider.dart';
-import 'package:vc_taskcontrol/src/providers/route_data_provider.dart';
-import 'package:vc_taskcontrol/src/providers/router_card_provider.dart';
+import 'package:vc_taskcontrol/src/providers/app/routercard/hour_ranges_provider.dart';
+import 'package:vc_taskcontrol/src/providers/app/routercard/operators_provider.dart';
+import 'package:vc_taskcontrol/src/providers/app/routercard/sections_provider.dart';
+import 'package:vc_taskcontrol/src/providers/app/routercard/steps_provider.dart';
+import 'package:vc_taskcontrol/src/providers/app/routercard/supervisors_provider.dart';
+import 'package:vc_taskcontrol/src/providers/app/routercard/mock_data_provider.dart';
+import 'package:vc_taskcontrol/src/providers/app/routercard/route_data_provider.dart';
+import 'package:vc_taskcontrol/src/providers/app/routercard/router_card_provider.dart';
 import 'package:vc_taskcontrol/src/services/connection_provider.dart';
 import 'package:vc_taskcontrol/src/storage/preferences/app_preferences.dart';
+import 'package:vc_taskcontrol/src/storage/routes/route_database.dart';
 import 'package:vc_taskcontrol/src/widgets/custom_app_bar.dart';
 import 'widgets/widgets_page.dart';
 
@@ -134,7 +135,7 @@ class _ControltaskBasePageState extends State<ControltaskBasePage> {
 
     // rutas
     Provider.of<RouteCardProvider>(context, listen: false).loadRoutesFromApi();
-
+    await RouteDatabase().clearAllReads();
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Actualizando datos servidor y limpiando sesión'),

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:vc_taskcontrol/src/providers/pos/table_provider.dart';
 
 import '../config/pos_config.dart'; // <-- Configuración de columnas dinámicas
-import '../providers/table_provider.dart';
 
 class PosTable extends StatelessWidget {
   const PosTable({super.key});

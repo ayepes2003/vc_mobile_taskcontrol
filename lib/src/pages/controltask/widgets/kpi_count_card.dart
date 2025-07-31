@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:vc_taskcontrol/src/providers/router_card_provider.dart';
+import 'package:vc_taskcontrol/src/providers/app/routercard/router_card_provider.dart';
 
 class KPICountsWidget extends StatelessWidget {
   @override

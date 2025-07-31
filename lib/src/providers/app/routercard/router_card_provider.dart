@@ -1,87 +1,168 @@
 import 'package:flutter/material.dart';
-import 'package:vc_taskcontrol/src/models/appsettings/tolerance_settings.dart';
 import 'package:vc_taskcontrol/src/models/routescard/route_card.dart';
-import 'package:flutter/services.dart' show rootBundle;
-import 'package:csv/csv.dart';
 import 'package:vc_taskcontrol/src/models/routescard/route_card_read.dart';
 import 'package:vc_taskcontrol/src/services/dio_servide.dart';
+import 'package:vc_taskcontrol/src/storage/routes/route_database.dart';
 
 class RouteCardProvider with ChangeNotifier {
   final DioService dioService;
+  final RouteDatabase routeDatabase = RouteDatabase();
 
   RouteCardProvider(this.dioService);
 
+  // Estado y data
   List<RouteCard> _routes = [];
+  List<RouteCardRead> _recentReads = [];
   bool _isLoading = false;
   String? lastError;
 
+  // Accesores para UI
   List<RouteCard> get routes => List.unmodifiable(_routes);
+  List<RouteCardRead> get recentReads => List.unmodifiable(_recentReads);
+  List<RouteCardRead> get recentReadsLimited => _recentReads.take(8).toList();
   bool get isLoading => _isLoading;
 
-  final List<RouteCardRead> _recentReads = [];
-  List<RouteCardRead> get recentReads => List.unmodifiable(_recentReads);
-
+  // Configuración (puedes adaptar o sacar si no lo usas)
   int tolerance = 0;
   int toleranceDifference = 1;
 
+  /// Carga rutas desde API y guarda/actualiza SQLite
   Future<void> loadRoutesFromApi() async {
+    _isLoading = true;
+    notifyListeners();
     try {
-      print('Base URL actual de Dio: ${dioService.dio.options.baseUrl}');
       final response = await dioService.getRequest('/route-cards-active');
       final dataList =
           (response['data']['data'] as List)
               .map((item) => RouteCard.fromJson(item))
               .toList();
+
+      // Guardar o actualizar en DB local
+      for (var route in dataList) {
+        final localRoute = RouteCard(
+          id: route.id,
+          serverId: route.serverId,
+          codeProces: route.codeProces,
+          routeNum: route.routeNum,
+          internalCode: route.internalCode,
+          projectName: route.projectName,
+          projectCode: route.projectCode,
+          codeDispatch: route.codeDispatch,
+          codeSalesErp: route.codeSalesErp,
+          itemCode: route.itemCode,
+          descriptionMaterial: route.descriptionMaterial,
+          pieceType: route.pieceType,
+          codePiece: route.codePiece,
+          pieceNum: route.pieceNum,
+          totalPiece: route.totalPiece,
+          labelPiece: route.labelPiece,
+          quantity: route.quantity,
+          grain: route.grain,
+          initialQuantity: route.initialQuantity,
+          totalPieceBase: route.totalPieceBase,
+          sectionId: route.sectionId,
+          sectionName: route.sectionName,
+          statusName: route.statusName,
+          statusColor: route.statusColor,
+          statusDescription: route.statusDescription,
+          deviceId: 'tabletDev',
+          statusId: 2,
+          syncAttempts: 0,
+          captureDate: DateTime.now().toIso8601String(),
+          updateTimestamp: route.statusDescription,
+        );
+
+        await routeDatabase.insertOrUpdateRouteCard(localRoute);
+      }
+
       _routes = dataList;
+      lastError = null;
     } catch (e) {
-      lastError = 'Error al cargar operators: $e';
+      lastError = 'Error al cargar rutas: $e';
+      print(e);
       _routes = [];
     }
+    _isLoading = false;
     notifyListeners();
   }
 
-  Future<void> loadToleranceSettings() async {
+  /// Carga rutas desde SQLite
+  Future<void> loadRoutesFromLocal() async {
     try {
-      final response = await dioService.getRequest('/app-settings/tolerances');
-      if (response['data'] != null &&
-          response['data'] is List &&
-          (response['data'] as List).isNotEmpty) {
-        final tolJson = (response['data'] as List).first;
-        tolerance = tolJson['tolerance'] ?? 0;
-        toleranceDifference = tolJson['toleranceDifference'] ?? 1;
-      } else {
-        // Usa valores por defecto si no hay data
-        tolerance = 0;
-        toleranceDifference = 1;
-      }
+      final localRoutes = await routeDatabase.getAllRouteCards();
+      _routes = localRoutes;
+      notifyListeners();
     } catch (e) {
-      // En caso de error, usa valores por defecto
-      tolerance = 0;
-      toleranceDifference = 1;
+      print('Error loading routes from local DB: $e');
     }
-    notifyListeners();
   }
 
-  String limpiar(String s) =>
-      s.trim().replaceAll('\r', '').replaceAll('\n', '').toLowerCase();
-
-  RouteCard? findByCodeProces(String code) {
-    final buscado = limpiar(code);
-    for (final rc in _routes) {
-      if (limpiar(rc.codeProces) == buscado) {
-        print(
-          'MATCH ENCONTRADO: "${rc.codeProces} Cantidad de piezas: ${rc.initialQuantity}"',
-        );
-        return rc;
-      }
+  /// Carga lecturas recientes desde SQLite
+  Future<void> loadRecentReads() async {
+    try {
+      final recentReads = await routeDatabase.getRecentReads();
+      _recentReads = recentReads;
+      notifyListeners();
+    } catch (e) {
+      print('Error loading recent reads from local DB: $e');
     }
-    print('NO ENCONTRADO tras limpiar');
-    return null;
   }
 
-  /// Añadir una nueva lectura (cuando el usuario escanea y confirma cantidad)
+  /// Obtiene suma total registrada para un código de proceso
+  Future<int> getTotalRegisteredQuantity(String codeProces) async {
+    return await routeDatabase.getTotalRegisteredQuantity(codeProces);
+  }
+
+  /// Guarda una ruta en SQLite manualmente y recarga rutas locales
+  Future<void> saveRouteCard(RouteCard card) async {
+    await routeDatabase.insertOrUpdateRouteCard(card);
+    await loadRoutesFromLocal();
+  }
+
+  /// Agrega una lectura local (guardado en SQLite) y recarga lecturas
+  Future<void> addReadLocal(RouteCard card, int enteredQuantity) async {
+    final routeCardId = await routeDatabase.getRouteCardIdByCodeProces(
+      card.codeProces,
+    );
+
+    if (routeCardId == null) {
+      throw Exception(
+        'RouteCard not found in local database for saving reading.',
+      );
+    }
+
+    final int totalRegistered = await routeDatabase.getTotalRegisteredQuantity(
+      card.codeProces,
+    );
+
+    final int initialQuantity = int.tryParse(card.initialQuantity) ?? 0;
+    // if (enteredQuantity > initialQuantity) {
+    //   throw Exception(
+    //     'Entered quantity exceeds initial quantity for card ${card.codeProces}.',
+    //   );
+    // }
+    final int difference =
+        initialQuantity - (totalRegistered + enteredQuantity);
+
+    // final int difference =
+    //     (int.tryParse(card.totalPiece ?? '0') ?? 0) - enteredQuantity;
+
+    await routeDatabase.insertRead({
+      'route_card_id': routeCardId,
+      'code_proces': card.codeProces,
+      'entered_quantity': enteredQuantity,
+      'difference': difference,
+      'read_at': DateTime.now().toIso8601String(),
+      'device_id': 'tabletDev',
+      'status_id': 1,
+      'sync_attempts': 0,
+    });
+
+    await loadRecentReads();
+  }
+
+  /// Agrega lectura sólo en memoria (no persistente)
   void addRead(RouteCard card, int enteredQuantity) {
-    print("${enteredQuantity} = ${card.codeProces}");
     _recentReads.insert(
       0,
       RouteCardRead(
@@ -93,9 +174,34 @@ class RouteCardProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  List<RouteCardRead> get recentReadsLimited => _recentReads.take(8).toList();
+  /// Borra todas las lecturas locales
+  Future<void> clearAllReads() async {
+    final db = await routeDatabase.database;
+    await db.delete('route_card_reads');
+    _recentReads = [];
+    notifyListeners();
+  }
 
-  /// Limpiar las tarjetas de ruta cargadas
+  /// Método util para limpiar strings
+  String limpiar(String s) =>
+      s.trim().replaceAll('\r', '').replaceAll('\n', '').toLowerCase();
+
+  /// Buscar ruta en memoria por código de proceso
+  RouteCard? findByCodeProces(String code) {
+    final buscado = limpiar(code);
+    for (final rc in _routes) {
+      if (limpiar(rc.codeProces) == buscado) {
+        print(
+          'Match found: "${rc.codeProces} Quantity: ${rc.initialQuantity}"',
+        );
+        return rc;
+      }
+    }
+    print('No match found after cleaning');
+    return null;
+  }
+
+  /// Limpiar rutas cargadas en memoria
   void clearRoutes() {
     _routes = [];
     notifyListeners();
@@ -199,31 +305,32 @@ class RouteCardProvider with ChangeNotifier {
   String getCellValue(RouteCardRead record, String key) {
     switch (key) {
       case 'codeProces':
-        return record.card.codeProces;
+        return record.card?.codeProces ?? '';
       case 'codePiece':
-        return record.card.codePiece;
+        return record.card?.codePiece ?? '';
       case 'item':
-        return record.card.item;
+        return record.card?.itemCode ?? '';
       case 'quantity':
-        return record.card.quantity;
+        return record.card?.quantity ?? '';
       case 'totalPiece':
-        return record.card.totalPiece;
+        return record.card?.totalPiece ?? '';
       case 'initialQuantity':
-        return record.card.totalPiece;
+        return record.card?.initialQuantity ?? '';
       case 'enteredQuantity':
         return record.enteredQuantity.toString();
       case 'difference':
         print('DEBUG: difference handed to cell: ${record.difference}');
         return record.difference.toString();
       case 'status':
-        return record.status;
+        return record.status ?? 'N/A';
       default:
         return '';
     }
   }
 }
 
-  // {'titulo':'Grano','key':'grain','...'},
+
+// {'titulo':'Grano','key':'grain','...'},
 // {'titulo': 'Proyecto',   'key': 'projectName', ...},
   // {'titulo': 'Despacho',   'key': 'codeDispacht', ...},
   // {'titulo': 'ERP',        'key': 'codeSalesErp', ...},
@@ -290,3 +397,4 @@ class RouteCardProvider with ChangeNotifier {
 //   print('Cantidad de tarjetas de ruta cargadas: ${_routes.length}');
 //   notifyListeners();
 // }
+

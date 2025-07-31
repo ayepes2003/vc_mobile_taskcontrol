@@ -1,6 +1,6 @@
 // lib/src/providers/table_provider.dart
 import 'package:flutter/material.dart';
-import '../storage/data_storage.dart';
+import 'package:vc_taskcontrol/src/storage/data_storage.dart';
 
 class TableProvider with ChangeNotifier {
   final DataStorage _storage;

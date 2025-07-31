@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:vc_taskcontrol/src/models/operator.dart';
-import 'package:vc_taskcontrol/src/providers/app/operators_provider.dart';
-import 'package:vc_taskcontrol/src/providers/mock_data_provider.dart';
-import 'package:vc_taskcontrol/src/providers/route_data_provider.dart';
+import 'package:vc_taskcontrol/src/providers/app/routercard/operators_provider.dart';
+import 'package:vc_taskcontrol/src/providers/app/routercard/route_data_provider.dart';
 
 class OperatorGridWidget extends StatelessWidget {
   final ValueChanged<Operator> onSelected;

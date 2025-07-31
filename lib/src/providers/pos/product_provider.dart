@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:vc_taskcontrol/src/models/product.dart';
 import 'package:vc_taskcontrol/src/storage/sqlite_product_storage.dart';
-import '../models/product.dart';
 
 class ProductProvider with ChangeNotifier {
   final SqliteProductStorage _storage;
