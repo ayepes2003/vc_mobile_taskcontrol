@@ -1,25 +1,39 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:vc_taskcontrol/src/models/routescard/route_card.dart';
 import 'package:vc_taskcontrol/src/models/routescard/route_card_read.dart';
+import 'package:vc_taskcontrol/src/models/routescard/route_initial_data.dart';
+import 'package:vc_taskcontrol/src/providers/app/routercard/route_data_provider.dart';
 // import 'package:vc_taskcontrol/src/models/routescard/route_read_record.dart';
 import 'package:vc_taskcontrol/src/services/dio_servide.dart';
+import 'package:vc_taskcontrol/src/storage/preferences/app_preferences.dart';
 import 'package:vc_taskcontrol/src/storage/routes/route_database.dart';
 
 class RouteCardProvider with ChangeNotifier {
   final DioService dioService;
+  RouteDataProvider routeDataProvider;
   final RouteDatabase routeDatabase = RouteDatabase();
 
-  RouteCardProvider(this.dioService);
+  // Constructor recibe instancia única de dioService y routeDataProvider
+  RouteCardProvider(this.dioService, this.routeDataProvider);
+
+  // Método para actualizar sólo el routeDataProvider sin cambiar dioService ni recrear provider
+  void updateRouteDataProvider(RouteDataProvider newProvider) {
+    routeDataProvider = newProvider;
+    notifyListeners();
+  }
 
   // Estado y data
-
   List<RouteCard> _routes = [];
+  List<RouteInitialData> _routesInitial = [];
   List<RouteCardRead> _recentReads = [];
   bool _isLoading = false;
   String? lastError;
 
   // Accesores para UI
   List<RouteCard> get routes => List.unmodifiable(_routes);
+  List<RouteInitialData> get routesInitial => List.unmodifiable(_routesInitial);
   List<RouteCardRead> get recentReads => List.unmodifiable(_recentReads);
   List<RouteCardRead> get recentReadsLimited => _recentReads.take(8).toList();
   bool get isLoading => _isLoading;
@@ -28,67 +42,127 @@ class RouteCardProvider with ChangeNotifier {
   int tolerance = 0;
   int toleranceDifference = 1;
 
-  /// Carga rutas desde API y guarda/actualiza SQLite
-  Future<void> loadRoutesFromApi() async {
+  Future<void> loadAndSyncInitialDataFromApi({
+    required String sectionName,
+  }) async {
     _isLoading = true;
     notifyListeners();
+    final sectionName = AppPreferences.getSection();
     try {
-      final response = await dioService.getRequest('/route-cards-active');
+      final response = await dioService.getRequest(
+        '/initial-data?section_name=$sectionName',
+      );
+      final dataList =
+          (response['data']['data'] as List)
+              .map((item) => RouteInitialData.fromJson(item))
+              .toList();
+
+      // 1. Obtener lista completa de codeProces locales de una vez:
+      final localRoutes = await routeDatabase.getAllRouteInitialCards();
+      final localCodeProcesSet = localRoutes.map((r) => r.codeProces).toSet();
+
+      // 2. Recorrer lista del backend y decidir insertar sólo los nuevos
+      for (var route in dataList) {
+        if (!localCodeProcesSet.contains(route.codeProces)) {
+          await routeDatabase.insertOrUpdateRouteInitialData(route);
+        } else {
+          // Opcional: aquí también podrías comparar statusId para actualizar si cambió
+          // Por ahora omitimos para optimizar tiempo
+        }
+      }
+
+      // await routeDatabase.syncRouteInitialData(dataList);
+      _routesInitial = dataList;
+      lastError = null;
+    } catch (e) {
+      lastError = 'Error al cargar rutas: $e';
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> loadInitialRoutesFromApi({String? sectionName}) async {
+    _isLoading = true;
+    notifyListeners();
+    final sectionName = AppPreferences.getSection();
+    try {
+      final response = await dioService.getRequest(
+        '/initial-data?section_name=$sectionName',
+      );
+      final dataList =
+          (response['data']['data'] as List)
+              .map((item) => RouteInitialData.fromJson(item))
+              .toList();
+      // 1. Obtener lista completa de codeProces locales de una vez:
+      final localRoutes = await routeDatabase.getAllRouteInitialCards();
+      final localCodeProcesSet = localRoutes.map((r) => r.codeProces).toSet();
+
+      // 2. Recorrer lista del backend y decidir insertar sólo los nuevos
+      for (var route in dataList) {
+        if (!localCodeProcesSet.contains(route.codeProces)) {
+          await routeDatabase.insertOrUpdateRouteInitialData(route);
+        } else {
+          // Opcional: aquí también podrías comparar statusId para actualizar si cambió
+          // Por ahora omitimos para optimizar tiempo
+        }
+      }
+      _routesInitial = dataList;
+      lastError = null;
+    } catch (e) {
+      lastError = 'Error al cargar rutas: $e';
+      // print(e);
+      _routesInitial = [];
+    }
+
+    _isLoading = false;
+    notifyListeners();
+  }
+
+  Future<void> loadRoutesFromApi({String? sectionName}) async {
+    _isLoading = true;
+    notifyListeners();
+    final sectionName = AppPreferences.getSection();
+    try {
+      final response = await dioService.getRequest(
+        '/route-cards-active?section_name=$sectionName',
+      );
       final dataList =
           (response['data']['data'] as List)
               .map((item) => RouteCard.fromJson(item))
               .toList();
 
-      // Guardar o actualizar en DB local
-      for (var route in dataList) {
-        final localRoute = RouteCard(
-          id: route.id,
-          serverId: route.serverId,
-          codeProces: route.codeProces,
-          routeNum: route.routeNum,
-          internalCode: route.internalCode,
-          projectName: route.projectName,
-          projectCode: route.projectCode,
-          codeDispatch: route.codeDispatch,
-          codeSalesErp: route.codeSalesErp,
-          itemCode: route.itemCode,
-          descriptionMaterial: route.descriptionMaterial,
-          pieceType: route.pieceType,
-          codePiece: route.codePiece,
-          pieceNum: route.pieceNum,
-          totalPiece: route.totalPiece,
-          labelPiece: route.labelPiece,
-          quantity: route.quantity,
-          grain: route.grain,
-          initialQuantity: route.initialQuantity,
-          totalPieceBase: route.totalPieceBase,
-          sectionId: route.sectionId,
-          sectionName: route.sectionName,
-          statusName: route.statusName,
-          statusColor: route.statusColor,
-          statusDescription: route.statusDescription,
-          deviceId: 'tabletDev',
-          statusId: 2,
-          syncAttempts: 0,
-          captureDate: DateTime.now().toIso8601String(),
-          updateTimestamp: route.statusDescription,
-        );
+      // 1. Obtener lista completa de codeProces locales de una vez:
+      final localRoutes = await routeDatabase.getAllRouteCards();
+      final localCodeProcesSet = localRoutes.map((r) => r.codeProces).toSet();
 
-        await routeDatabase.insertOrUpdateRouteCard(localRoute);
+      // 2. Recorrer lista del backend y decidir insertar sólo los nuevos
+      for (var route in dataList) {
+        if (!localCodeProcesSet.contains(route.codeProces)) {
+          await routeDatabase.insertOrUpdateRouteCard(route);
+        } else {
+          // Opcional: aquí también podrías comparar statusId para actualizar si cambió
+          // Por ahora omitimos para optimizar tiempo
+        }
       }
 
       _routes = dataList;
       lastError = null;
     } catch (e) {
       lastError = 'Error al cargar rutas: $e';
-      print(e);
+      // print(e);
       _routes = [];
     }
+
     _isLoading = false;
     notifyListeners();
   }
 
-  /// Carga rutas desde SQLite
+  Future<String> exportReadsAsJson() async {
+    final readsAsMap = await routeDatabase.getAllReadsAsMap();
+    return jsonEncode(readsAsMap);
+  }
+
   Future<void> loadRoutesFromLocal() async {
     try {
       final localRoutes = await routeDatabase.getAllRouteCards();
@@ -115,7 +189,7 @@ class RouteCardProvider with ChangeNotifier {
     return await routeDatabase.getTotalRegisteredQuantity(codeProces);
   }
 
-  /// Guarda una ruta en SQLite manualmente y recarga rutas locales
+  // Guarda una ruta en SQLite manualmente y recarga rutas locales
   Future<void> saveRouteCard(RouteCard card) async {
     await routeDatabase.insertOrUpdateRouteCard(card);
     await loadRoutesFromLocal();
@@ -138,16 +212,15 @@ class RouteCardProvider with ChangeNotifier {
     );
 
     final int initialQuantity = int.tryParse(card.initialQuantity) ?? 0;
-    // if (enteredQuantity > initialQuantity) {
-    //   throw Exception(
-    //     'Entered quantity exceeds initial quantity for card ${card.codeProces}.',
-    //   );
-    // }
+
     final int difference =
         initialQuantity - (totalRegistered + enteredQuantity);
 
-    // final int difference =
-    //     (int.tryParse(card.totalPiece ?? '0') ?? 0) - enteredQuantity;
+    final String? section = routeDataProvider.section;
+
+    print(
+      'Valores a insertar: supervisor=${routeDataProvider.supervisor}, hour=${routeDataProvider.selectedHourRange}, subsection=${routeDataProvider.subsection}, operator=${routeDataProvider.operatorName}',
+    );
 
     await routeDatabase.insertRead({
       'route_card_id': routeCardId,
@@ -158,6 +231,20 @@ class RouteCardProvider with ChangeNotifier {
       'device_id': 'tabletDev',
       'status_id': 1,
       'sync_attempts': 0,
+
+      // Puedes incluir aquí campos nuevos de contextos si los quieres guardar directamente
+      'supervisor': routeDataProvider.supervisor,
+      'selected_hour_range': routeDataProvider.selectedHourRange,
+      'section': routeDataProvider.section,
+      'subsection': routeDataProvider.subsection,
+      'operator': routeDataProvider.operatorName,
+      'supervisory_id': routeDataProvider.selectedSupervisorId,
+      'section_id': routeDataProvider.selectedSection?.id,
+      // 'subsection_id': routeDataProvider.selectedSubsection?.id,
+      // 'operator_id': routeDataProvider.selectedOperator?.id,
+
+      // Aquí si usas accumDiff, calcula y pásalo igual (deja null por ahora si no tienes lógica)
+      'accum_diff': null,
     });
 
     await loadRecentReads();
@@ -169,6 +256,7 @@ class RouteCardProvider with ChangeNotifier {
       0,
       RouteCardRead(
         card: card,
+        section: card.sectionName,
         enteredQuantity: enteredQuantity,
         readAt: DateTime.now(),
       ),
@@ -284,17 +372,7 @@ class RouteCardProvider with ChangeNotifier {
       'tooltip': 'Código de la pieza',
       'icono': Icons.precision_manufacturing_outlined,
     },
-    // {
-    //   'key': 'item',
-    //   'titulo': 'Item',
-    //   'ancho': 200.0,
-    //   'align': TextAlign.left,
-    //   'colorFondo': Colors.white,
-    //   'colorTexto': Colors.black,
-    //   'visible': false,
-    //   'tooltip': 'Referente a producto/mueble',
-    //   'icono': Icons.chair_outlined,
-    // },
+    // ... otras columnas ...
     {
       'key': 'totalPiece',
       'titulo': 'Cant Inicial',
@@ -328,28 +406,7 @@ class RouteCardProvider with ChangeNotifier {
       'tooltip': 'Cantidad ingresada al leer',
       'icono': Icons.edit_outlined,
     },
-    // {
-    //   'key': 'difference',
-    //   'titulo': 'Faltante',
-    //   'ancho': 50.0,
-    //   'align': TextAlign.right,
-    //   'colorFondo': Colors.white,
-    //   'colorTexto': Colors.black,
-    //   'visible': true,
-    //   'tooltip': 'Diferencia entre estimada y digitada',
-    //   'icono': Icons.error_outline,
-    // },
-    // {
-    //   'key': 'status',
-    //   'titulo': 'Estado',
-    //   'ancho': 40.0,
-    //   'align': TextAlign.center,
-    //   'colorFondo': Colors.white,
-    //   'colorTexto': Colors.black,
-    //   'visible': true,
-    //   'tooltip': 'Estado de la lectura',
-    //   'icono': Icons.info_outline,
-    // },
+    // ... otras columnas ...
   ];
 
   List<Map<String, dynamic>> get columnsTabletVisibles {
@@ -382,73 +439,3 @@ class RouteCardProvider with ChangeNotifier {
     }
   }
 }
-
-
-// {'titulo':'Grano','key':'grain','...'},
-// {'titulo': 'Proyecto',   'key': 'projectName', ...},
-  // {'titulo': 'Despacho',   'key': 'codeDispacht', ...},
-  // {'titulo': 'ERP',        'key': 'codeSalesErp', ...},
-  // {'titulo': 'Descripción Material', 'key': 'descriptionMaterial', ...},
-  // {'titulo': 'Tipo Pieza', 'key': 'pieceType', ...},
-  // {'titulo': 'Núm. Pieza', 'key': 'numPiece', ...},
-  // {'titulo': 'Largo 1',    'key': 'length1', ...},
-  // {'titulo': 'Ancho 1',    'key': 'width1', ...},
-  // {'titulo': 'Notas A',    'key': 'notesA', ...},
-  // {'titulo': 'Largo 2',    'key': 'length2', ...},
-  // {'titulo': 'Ancho 2',    'key': 'width2', ...},
-  // {'titulo': 'Notas B',    'key': 'notesB', ...},
-  // {'titulo': '# Piezas Totales',   'key': 'totalPiece', ...},
-  // {'titulo': '# Piezas Etiqueta','key': 'labelPiece', ...},
-
-   /// Cargar las tarjetas de ruta desde un archivo CSV local
-// Future<void> loadRoutesFromCSV() async {
-//   _isLoading = true;
-//   notifyListeners();
-
-//   try {
-//     final rawData = await rootBundle.loadString('data/card_route_trans.csv');
-//     // print(rawData.substring(0, 500));
-//     final rowsAsList = const CsvToListConverter(
-//       fieldDelimiter: ';',
-//       eol: '\r\n',
-//     ).convert(rawData);
-
-//     if (rowsAsList.isEmpty) {
-//       _routes = [];
-//       _isLoading = false;
-//       print('Cantidad de tarjetas de ruta cargadas: en vacias ');
-//       notifyListeners();
-//       return;
-//     }
-
-//     final headers = rowsAsList.first;
-
-//     _routes =
-//         rowsAsList.skip(1).map((row) {
-//           // 1. Convierte los valores a String y garantiza misma longitud que header
-//           final fixedRow = List<String>.from(
-//             row.map((e) => e?.toString() ?? ''),
-//           );
-//           while (fixedRow.length < headers.length) {
-//             fixedRow.add('');
-//           }
-//           // 2. En caso de exceso de columnas, ignora las extras
-//           final rowData = fixedRow.take(headers.length);
-
-//           // 3. Crea el mapa y el modelo normalmente
-//           final data = Map<String, dynamic>.fromIterables(
-//             headers.map((e) => e.toString()),
-//             rowData,
-//           );
-//           return RouteCard.fromJson(data);
-//         }).toList();
-//   } catch (e) {
-//     print('catch: $e');
-//     _routes = [];
-//   }
-
-//   _isLoading = false;
-//   print('Cantidad de tarjetas de ruta cargadas: ${_routes.length}');
-//   notifyListeners();
-// }
-

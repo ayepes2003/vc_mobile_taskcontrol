@@ -25,6 +25,7 @@ import 'src/myapp.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
   await BasePreferences.init();
 
   // Personaliza el widget de error global
@@ -71,10 +72,42 @@ void main() async {
   final dioService = DioService(dio, apiConfig);
   final connectionProvider = ConnectionProvider(dioService, apiConfig);
   final router = createRouter(connectionProvider);
-
+  // final sectionName = AppPreferences.getSection();
   runApp(
     MultiProvider(
       providers: [
+        // 1. Provee la instancia ya creada de DioService (no crear nueva, no pasa null)
+        Provider<DioService>.value(value: dioService),
+
+        // 2. Provee RouteDataProvider antes de RouteCardProvider
+        ChangeNotifierProvider(
+          create: (_) {
+            final provider = RouteDataProvider();
+            provider.hydrateFromPrefs(
+              project: AppPreferences.getProject(),
+              section: AppPreferences.getSection(),
+              subsection: AppPreferences.getSubsection(),
+              supervisor: AppPreferences.getSupervisor(),
+              operatorName: AppPreferences.getOperator(),
+              estimatedQuantity:
+                  int.tryParse(AppPreferences.getEstimatedQuantity() ?? '') ??
+                  0,
+            );
+            return provider;
+          },
+        ),
+        // 3. Provee RouteCardProvider, con Proxy solo para RouteDataProvider, dioService se obtiene desde Provider.value
+        ChangeNotifierProxyProvider<RouteDataProvider, RouteCardProvider>(
+          create: (context) {
+            final ds = Provider.of<DioService>(context, listen: false);
+            final rdp = Provider.of<RouteDataProvider>(context, listen: false);
+            return RouteCardProvider(ds, rdp);
+          },
+          update: (_, routeDataProvider, previous) {
+            previous?.updateRouteDataProvider(routeDataProvider);
+            return previous!;
+          },
+        ),
         ChangeNotifierProvider(
           create:
               (_) => ThemeProvider(isDarkMode: GeneralPreferences.isDarkMode),
@@ -105,29 +138,10 @@ void main() async {
                   OperatorsProvider(dioService)..loadOperatorsFromApi(),
         ),
 
-        ChangeNotifierProvider(
-          create:
-              (context) => RouteCardProvider(dioService)..loadRoutesFromApi(),
-        ),
-
-        // ChangeNotifierProvider(create: (_) => RouteCardProvider()),
-        ChangeNotifierProvider(
-          create: (_) {
-            final provider = RouteDataProvider();
-            provider.hydrateFromPrefs(
-              project: AppPreferences.getProject(),
-              section: AppPreferences.getSection(),
-              subsection: AppPreferences.getSubsection(),
-              supervisor: AppPreferences.getSupervisor(),
-              operatorName: AppPreferences.getOperator(),
-              estimatedQuantity:
-                  int.tryParse(AppPreferences.getEstimatedQuantity() ?? '') ??
-                  0,
-            );
-            return provider;
-          },
-        ),
-
+        // ChangeNotifierProvider(
+        //   create:
+        //       (context) => RouteCardProvider(dioService)..loadRoutesFromApi(),
+        // ),
         ChangeNotifierProvider(
           create:
               (_) =>
@@ -140,6 +154,23 @@ void main() async {
           // ..loadHourRangesFromMock(),//Mockup Local AP
           // ..loadOperatorsFromJson(),//Mockup  Local AP
         ),
+
+        // ChangeNotifierProvider(
+        //   create: (_) {
+        //     final provider = RouteDataProvider();
+        //     provider.hydrateFromPrefs(
+        //       project: AppPreferences.getProject(),
+        //       section: AppPreferences.getSection(),
+        //       subsection: AppPreferences.getSubsection(),
+        //       supervisor: AppPreferences.getSupervisor(),
+        //       operatorName: AppPreferences.getOperator(),
+        //       estimatedQuantity:
+        //           int.tryParse(AppPreferences.getEstimatedQuantity() ?? '') ??
+        //           0,
+        //     );
+        //     return provider;
+        //   },
+        // ),
       ],
       child: MyApp(router: router),
     ),

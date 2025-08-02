@@ -55,27 +55,26 @@ class _ControltaskBasePageState extends State<ControltaskBasePage> {
       DeviceOrientation.landscapeLeft,
       DeviceOrientation.landscapeRight,
     ]);
-
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       // 🔄 Hidratación de sección y subsección desde SharedPreferences
       // Provider.of<RouteCardProvider>(
       //   context,
       //   listen: false,
       // ).loadRoutesFromCSV();
-      filterInitialize(context);
+
+      // Simulación: carga desde SharedPreferences o algún servicio local
+      final savedSection = await AppPreferences.getSection(); // String
+      final savedSubsection = await AppPreferences.getSubsection(); // String
+
       Provider.of<RouteCardProvider>(
         context,
         listen: false,
-      ).loadRoutesFromApi();
+      ).loadRoutesFromApi(sectionName: savedSection);
 
       final routeProvider = Provider.of<RouteDataProvider>(
         context,
         listen: false,
       );
-
-      // Simulación: carga desde SharedPreferences o algún servicio local
-      final savedSection = await AppPreferences.getSection(); // String
-      final savedSubsection = await AppPreferences.getSubsection(); // String
 
       // 👉 Ahora tú buscas en tu lista de secciones (del DataProvider)
       final allSections =
@@ -91,7 +90,6 @@ class _ControltaskBasePageState extends State<ControltaskBasePage> {
         }
       }
     });
-    WidgetsBinding.instance.addPostFrameCallback((_) async {});
   }
 
   @override
@@ -116,10 +114,22 @@ class _ControltaskBasePageState extends State<ControltaskBasePage> {
     });
   }
 
-  Future<void> _handleRefresh(BuildContext context) async {
-    await AppPreferences.clearAll();
-    Provider.of<RouteDataProvider>(context, listen: false).clear();
+  Future<void> loadAllRoutes() async {
+    await Future.wait([
+      Provider.of<RouteCardProvider>(
+        context,
+        listen: false,
+      ).loadRoutesFromApi(),
+      Provider.of<RouteCardProvider>(
+        context,
+        listen: false,
+      ).loadInitialRoutesFromApi(),
+    ]);
+  }
 
+  Future<void> _handleRefresh(BuildContext context) async {
+    // Provider.of<RouteDataProvider>(context, listen: false).clear();
+    await RouteDatabase().clearAllReads();
     Provider.of<SupervisorsProvider>(
       context,
       listen: false,
@@ -129,6 +139,7 @@ class _ControltaskBasePageState extends State<ControltaskBasePage> {
       context,
       listen: false,
     ).loadHourRangesFromApi();
+
     Provider.of<SectionsProvider>(context, listen: false).loadSectionsFromApi();
     Provider.of<OperatorsProvider>(
       context,
@@ -136,12 +147,12 @@ class _ControltaskBasePageState extends State<ControltaskBasePage> {
     ).loadOperatorsFromApi();
 
     // rutas
-    Provider.of<RouteCardProvider>(context, listen: false).loadRoutesFromApi();
-    await RouteDatabase().clearAllReads();
-    // await Provider.of<RouteCardProvider>(
-    //   context,
-    //   listen: false,
-    // ).loadRoutesFromLocal();
+    await loadAllRoutes();
+
+    await Provider.of<RouteCardProvider>(
+      context,
+      listen: false,
+    ).loadRoutesFromLocal();
 
     await Provider.of<RouteCardProvider>(
       context,
@@ -151,22 +162,6 @@ class _ControltaskBasePageState extends State<ControltaskBasePage> {
       const SnackBar(
         content: Text('Actualizando datos servidor y limpiando sesión'),
       ),
-    );
-  }
-
-  void filterInitialize(BuildContext context) {
-    final provider = Provider.of<RouteDataProvider>(context, listen: false);
-    provider.hydrateFromPrefs(
-      project: AppPreferences.getProject(),
-      section: AppPreferences.getSection(),
-      subsection: AppPreferences.getSubsection(),
-      supervisor: AppPreferences.getSupervisor(),
-      operatorName: AppPreferences.getOperator(),
-      estimatedQuantity: int.tryParse(
-        AppPreferences.getEstimatedQuantity() ?? '',
-      ),
-      shiftName: null, // agrega aquí campos si tienes más guardados
-      selectedHourRange: null,
     );
   }
 
@@ -342,6 +337,55 @@ class _ControltaskBasePageState extends State<ControltaskBasePage> {
                           ),
                         ),
                         onPressed: () => _handleRefresh(context),
+                      ),
+                    ),
+
+                    Tooltip(
+                      message: "Download recent reads as JSON",
+                      child: IconButton(
+                        icon: const Icon(
+                          Icons.file_download,
+                          color: Colors.red,
+                          size: 30,
+                        ),
+                        style: IconButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: Colors.red,
+                          padding: const EdgeInsets.all(12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        onPressed: () async {
+                          final provider = Provider.of<RouteCardProvider>(
+                            context,
+                            listen: false,
+                          );
+                          final jsonData = await provider.exportReadsAsJson();
+
+                          // print(jsonData); // mostrar en consola
+                        },
+                      ),
+                    ),
+                    Tooltip(
+                      message: "Download recent reads as JSON",
+                      child: IconButton(
+                        icon: const Icon(
+                          Icons.delete_forever,
+                          color: Colors.red,
+                          size: 30,
+                        ),
+                        style: IconButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: Colors.red,
+                          padding: const EdgeInsets.all(12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        onPressed: () async {
+                          await RouteDatabase().clearAllData();
+                        },
                       ),
                     ),
                   ],

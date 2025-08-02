@@ -87,7 +87,7 @@ class CalculatorWidget extends StatelessWidget {
                         if (label == 'OK') {
                           if (label == 'C') {
                             // Aquí limpias preferencias ¡y también puedes limpiar el provider si quieres!
-                            await AppPreferences.clearAll();
+                            // await AppPreferences.clearAll();
                             // Si quieres, limpia los datos en el provider
                             Provider.of<RouteDataProvider>(
                               context,

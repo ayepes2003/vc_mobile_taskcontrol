@@ -88,18 +88,25 @@ class RouteDataProvider extends ChangeNotifier {
 
   void setSection(String value) {
     section = value;
+    print('Antes: section=${section}');
     notifyListeners();
+    print('notifyListeners: section=${section}');
   }
 
   void setSelectedSection(Section section) {
     selectedSection = section;
+    print('Antes: selectedSection=${selectedSection}');
     selectedSubsection = null; // 🔁 limpia automáticamente
     notifyListeners();
+    print('notifyListeners: selectedSubsection=${selectedSection}');
   }
 
   void setSubsection(String value) {
     subsection = value;
+    print('Antes: subsection=${selectedSection}');
+    selectedSubsection = null; // 🔁 limpia automáticamente
     notifyListeners();
+    print('notifyListeners: subsection=${selectedSection}');
   }
 
   void setSelectedSubsection(String subsection) {
@@ -109,23 +116,31 @@ class RouteDataProvider extends ChangeNotifier {
 
   void setSupervisor(String value) {
     supervisor = value;
+    print('Antes: supervisor=${selectedSection}');
     notifyListeners();
+    print('notifyListeners: supervisor=${selectedSection}');
   }
 
   void setSelectedSupervisorId(int id) {
     selectedSupervisorId = id;
+    print('Antes: selectedSupervisorId=${selectedSection}');
     notifyListeners();
+    print('notifyListeners: selectedSupervisorId=${selectedSection}');
   }
 
   void setOperatorName(String value) {
     operatorName = value;
+    print('Antes: operatorName=${selectedSection}');
     notifyListeners();
+    print('notifyListeners: operatorName=${selectedSection}');
   }
 
   void setSelectedOperatorId(int id) {
     // 👈 Setter
     selectedOperatorId = id;
+    print('Antes: selectedOperatorId=${selectedSection}');
     notifyListeners();
+    print('notifyListeners: selectedOperatorId=${selectedSection}');
   }
 
   void setEstimatedQuantity(int value) {

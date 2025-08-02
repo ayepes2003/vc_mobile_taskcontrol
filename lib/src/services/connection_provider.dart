@@ -22,7 +22,7 @@ class ConnectionProvider with ChangeNotifier {
   }
 
   void startConnectionMonitoring({
-    Duration interval = const Duration(seconds: 30),
+    Duration interval = const Duration(seconds: 45),
   }) {
     checkApiConnection();
     _timer?.cancel();

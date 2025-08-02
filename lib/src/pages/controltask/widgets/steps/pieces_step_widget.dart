@@ -90,13 +90,16 @@ class _PiecesStepWidgetState extends State<PiecesStepWidget> {
         Provider.of<RouteDataProvider>(context, listen: false).setFromRoute(
           project: resultado.projectName,
           itemCode: resultado.itemCode,
+          section: resultado.sectionName,
           totalPiece: initialQuantity,
         );
         Provider.of<RouteDataProvider>(
           context,
           listen: false,
         ).setRealQuantity(cantidad);
+
         provider.addRead(resultado, cantidad);
+
         await provider.addReadLocal(resultado, cantidad);
       }
     }
@@ -352,6 +355,7 @@ class _PiecesStepWidgetState extends State<PiecesStepWidget> {
               width: 300,
               child: TextField(
                 keyboardType: TextInputType.number,
+                // keyboardType: TextInputType.text para digitar texto,
                 controller: _searchController,
                 focusNode: _searchFocusNode,
                 decoration: InputDecoration(

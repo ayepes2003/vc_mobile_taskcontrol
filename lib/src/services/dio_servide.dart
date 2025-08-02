@@ -30,6 +30,10 @@ class DioService {
     _dio.options.headers = {
       'Authorization': 'Bearer YOUR_TOKEN_HERE', // Reemplaza con tu token real
       'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      'User-Agent': 'DioClient/1.0',
+      'X-Device-Id':
+          'YOUR_DEVICE_ID', // Reemplaza con tu ID de dispositivo real
     };
 
     // Agregar interceptores para manejar encabezados y respuestas
@@ -58,7 +62,7 @@ class DioService {
     try {
       await initConfig();
       final response = await _dio.get(path, queryParameters: queryParameters);
-      print(path);
+      // print(path);
       if (response.statusCode == 200) {
         return {'statusCode': response.statusCode, 'data': response.data};
       } else {
@@ -242,10 +246,6 @@ class DioService {
       );
     }
   }
-
-  ///products endpoints.
-  ///
-  ///
 
   Future<void> fetchProducts(Database db) async {
     try {
