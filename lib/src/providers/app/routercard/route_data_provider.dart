@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:vc_taskcontrol/src/models/section.dart';
+import 'package:vc_taskcontrol/src/storage/preferences/app_preferences.dart';
 
 class RouteDataProvider extends ChangeNotifier {
   String? projectName;
@@ -16,7 +17,9 @@ class RouteDataProvider extends ChangeNotifier {
 
   //Migración a la nueva propiedad centralcontent
   int? selectedSupervisorId;
-  int? selectedOperatorId; // 👈 Nueva propiedad
+  int? selectedOperatorId;
+  int? selectedSectionId;
+  int? selectedSubsectionId;
   int? selectedProjectId;
   String? selectedProjectName;
   Section? selectedSection;
@@ -34,17 +37,20 @@ class RouteDataProvider extends ChangeNotifier {
     int? estimatedQuantity,
     String? shiftName,
     String? selectedHourRange,
+    // int? selectSectionId,
   }) {
     if (project != null) projectName = project;
     if (itemCode != null) item = itemCode;
     if (totalPiece != null) totalPieces = totalPiece;
     if (section != null) this.section = section;
+
     if (subsection != null) this.subsection = subsection;
     if (supervisor != null) this.supervisor = supervisor;
     if (operatorName != null) this.operatorName = operatorName;
     if (estimatedQuantity != null) this.estimatedQuantity = estimatedQuantity;
     if (shiftName != null) this.shiftName = shiftName;
     if (selectedHourRange != null) this.selectedHourRange = selectedHourRange;
+    // if (selectSectionId != null) this.selectedSectionId = selectSectionId;
     notifyListeners();
   }
 
@@ -58,6 +64,10 @@ class RouteDataProvider extends ChangeNotifier {
     required int? estimatedQuantity,
     String? shiftName,
     String? selectedHourRange,
+    int? selectedSupervisorId, // 👈 nuevo
+    int? selectedSectionId, // 👈 nuevo
+    int? selectedSubsectionId,
+    int? selectedOperatorId, // 👈 nuevo
   }) {
     projectName = project;
     this.section = section;
@@ -67,80 +77,88 @@ class RouteDataProvider extends ChangeNotifier {
     this.estimatedQuantity = estimatedQuantity;
     this.shiftName = shiftName;
     this.selectedHourRange = selectedHourRange;
+    this.selectedSupervisorId = selectedSupervisorId;
+    this.selectedOperatorId = selectedOperatorId;
+    this.selectedSectionId = selectedSectionId;
+    this.selectedSubsectionId = selectedSubsectionId;
+    print(
+      'hydrateFromPrefs: selectedSectionId=$selectedSectionId, selectedSupervisorId=$selectedSupervisorId',
+    );
     notifyListeners();
   }
 
-  // SETTERS INDIVIDUALES PARA FLUJOS PASO-A-PASO
-  void setProject(String value) {
-    projectName = value;
+  void setSelectedSectionId(int? id) {
+    selectedSectionId = id;
     notifyListeners();
-  }
-
-  void setSelectedProjectId(int id) {
-    selectedProjectId = id;
-    notifyListeners();
-  }
-
-  void setSelectedProjectName(String name) {
-    selectedProjectName = name;
-    notifyListeners();
-  }
-
-  void setSection(String value) {
-    section = value;
-    print('Antes: section=${section}');
-    notifyListeners();
-    print('notifyListeners: section=${section}');
   }
 
   void setSelectedSection(Section section) {
     selectedSection = section;
-    print('Antes: selectedSection=${selectedSection}');
+    selectedSectionId = section.id;
+    // print('Antes: selectedSection=${selectedSection}');
     selectedSubsection = null; // 🔁 limpia automáticamente
     notifyListeners();
-    print('notifyListeners: selectedSubsection=${selectedSection}');
+    // print('notifyListeners: selectedSubsection=${selectedSection}');
+  }
+
+  void setSection(String value) {
+    section = value;
+    // print('Antes: section=${section}');
+    notifyListeners();
+    // print('notifyListeners: section=${section}');
   }
 
   void setSubsection(String value) {
     subsection = value;
-    print('Antes: subsection=${selectedSection}');
+    // print('Antes: subsection=${selectedSection}');
     selectedSubsection = null; // 🔁 limpia automáticamente
     notifyListeners();
-    print('notifyListeners: subsection=${selectedSection}');
+    // print('notifyListeners: subsection=${selectedSection}');
   }
 
-  void setSelectedSubsection(String subsection) {
-    selectedSubsection = subsection;
+  void setSelectedSubsectionId(int? id) {
+    selectedSubsectionId = id;
+    notifyListeners();
+  }
+
+  // void setSelectedSubsection(String subsection) {
+  //   selectedSubsection = subsection;
+  //   notifyListeners();
+  // }
+
+  void setSelectedSubsection(String name, {int? id}) {
+    selectedSubsection = name;
+    selectedSubsectionId = id;
     notifyListeners();
   }
 
   void setSupervisor(String value) {
     supervisor = value;
-    print('Antes: supervisor=${selectedSection}');
+    // print('Antes: supervisor=${selectedSection}');
     notifyListeners();
-    print('notifyListeners: supervisor=${selectedSection}');
+    // print('notifyListeners: supervisor=${selectedSection}');
   }
 
   void setSelectedSupervisorId(int id) {
     selectedSupervisorId = id;
-    print('Antes: selectedSupervisorId=${selectedSection}');
+    // print('Antes: selectedSupervisorId=${selectedSection}');
     notifyListeners();
-    print('notifyListeners: selectedSupervisorId=${selectedSection}');
-  }
-
-  void setOperatorName(String value) {
-    operatorName = value;
-    print('Antes: operatorName=${selectedSection}');
-    notifyListeners();
-    print('notifyListeners: operatorName=${selectedSection}');
+    // print('notifyListeners: selectedSupervisorId=${selectedSection}');
   }
 
   void setSelectedOperatorId(int id) {
     // 👈 Setter
     selectedOperatorId = id;
-    print('Antes: selectedOperatorId=${selectedSection}');
+    // print('Antes: selectedOperatorId=${selectedSection}');
     notifyListeners();
-    print('notifyListeners: selectedOperatorId=${selectedSection}');
+    // print('notifyListeners: selectedOperatorId=${selectedSection}');
+  }
+
+  void setOperatorName(String value) {
+    operatorName = value;
+    // print('Antes: operatorName=${selectedSection}');
+    notifyListeners();
+    // print('notifyListeners: operatorName=${selectedSection}');
   }
 
   void setEstimatedQuantity(int value) {
@@ -175,6 +193,22 @@ class RouteDataProvider extends ChangeNotifier {
     estimatedQuantity = null;
     shiftName = null;
     selectedHourRange = null;
+    notifyListeners();
+  }
+
+  // SETTERS INDIVIDUALES PARA FLUJOS PASO-A-PASO
+  void setProject(String value) {
+    projectName = value;
+    notifyListeners();
+  }
+
+  void setSelectedProjectId(int id) {
+    selectedProjectId = id;
+    notifyListeners();
+  }
+
+  void setSelectedProjectName(String name) {
+    selectedProjectName = name;
     notifyListeners();
   }
 }

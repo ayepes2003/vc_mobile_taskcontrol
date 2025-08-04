@@ -49,12 +49,35 @@ class _PiecesStepWidgetState extends State<PiecesStepWidget> {
 
   Future<void> _onSearchSubmitted(String code) async {
     final provider = Provider.of<RouteCardProvider>(context, listen: false);
-    final resultado = provider.findByCodeProces(code.trim());
+    final routeDataProvider = Provider.of<RouteDataProvider>(
+      context,
+      listen: false,
+    );
+    // final resultado = provider.findByCodeProces(code.trim());
+    final selectedSectionId =
+        routeDataProvider.selectedSectionId ??
+        AppPreferences.getSectionId() ??
+        0;
+    final resultado = provider.findByCodeProcesAndSectionId(
+      code.trim(),
+      selectedSectionId,
+    );
 
     setState(() {
       _resultado = resultado;
     });
 
+    if (resultado == null) {
+      // Aquí se muestra el mensaje si NO se encontró nada
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'No se encontró registro con ese código en la sección seleccionada.',
+          ),
+        ),
+      );
+      return;
+    }
     if (resultado != null) {
       final int initialQuantity =
           int.tryParse(resultado.totalPiece ?? '0') ?? 0;
@@ -65,6 +88,7 @@ class _PiecesStepWidgetState extends State<PiecesStepWidget> {
       final tolerance = provider.tolerance;
       final toleranceDifference = provider.toleranceDifference;
       final int remaining = initialQuantity - registeredQuantity;
+
       if (remaining <= 0) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -72,6 +96,8 @@ class _PiecesStepWidgetState extends State<PiecesStepWidget> {
           ),
         );
         return;
+
+        //no hay tarjeta por seccion y codigo
       }
 
       final cantidadStr = await showQuantityDialog(
@@ -86,12 +112,14 @@ class _PiecesStepWidgetState extends State<PiecesStepWidget> {
         int cantidad = int.tryParse(cantidadStr) ?? 0;
 
         await AppPreferences.setProject(resultado.projectName);
+        await AppPreferences.setSectionId(int.parse(resultado.sectionId));
 
         Provider.of<RouteDataProvider>(context, listen: false).setFromRoute(
           project: resultado.projectName,
           itemCode: resultado.itemCode,
           section: resultado.sectionName,
           totalPiece: initialQuantity,
+          // selectSectionId: int.tryParse(resultado.sectionId),
         );
         Provider.of<RouteDataProvider>(
           context,

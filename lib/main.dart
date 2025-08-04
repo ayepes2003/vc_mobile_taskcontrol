@@ -72,7 +72,9 @@ void main() async {
   final dioService = DioService(dio, apiConfig);
   final connectionProvider = ConnectionProvider(dioService, apiConfig);
   final router = createRouter(connectionProvider);
-  // final sectionName = AppPreferences.getSection();
+  print(
+    'Antes de cargar MyApp SectionId :${AppPreferences.getSectionId().toString()}',
+  );
   runApp(
     MultiProvider(
       providers: [
@@ -89,10 +91,17 @@ void main() async {
               subsection: AppPreferences.getSubsection(),
               supervisor: AppPreferences.getSupervisor(),
               operatorName: AppPreferences.getOperator(),
+              selectedHourRange: AppPreferences.getselectedHourRange(),
+              selectedSubsectionId: AppPreferences.getSubsectionId(),
+              selectedSupervisorId: AppPreferences.getSupervisorId(),
+              selectedOperatorId: AppPreferences.getOperatorId(),
+              selectedSectionId: AppPreferences.getSectionId(),
               estimatedQuantity:
                   int.tryParse(AppPreferences.getEstimatedQuantity() ?? '') ??
                   0,
+              shiftName: null,
             );
+
             return provider;
           },
         ),
@@ -154,24 +163,8 @@ void main() async {
           // ..loadHourRangesFromMock(),//Mockup Local AP
           // ..loadOperatorsFromJson(),//Mockup  Local AP
         ),
-
-        // ChangeNotifierProvider(
-        //   create: (_) {
-        //     final provider = RouteDataProvider();
-        //     provider.hydrateFromPrefs(
-        //       project: AppPreferences.getProject(),
-        //       section: AppPreferences.getSection(),
-        //       subsection: AppPreferences.getSubsection(),
-        //       supervisor: AppPreferences.getSupervisor(),
-        //       operatorName: AppPreferences.getOperator(),
-        //       estimatedQuantity:
-        //           int.tryParse(AppPreferences.getEstimatedQuantity() ?? '') ??
-        //           0,
-        //     );
-        //     return provider;
-        //   },
-        // ),
       ],
+
       child: MyApp(router: router),
     ),
   );

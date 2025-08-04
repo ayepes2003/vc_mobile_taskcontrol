@@ -4,14 +4,15 @@ import 'package:go_router/go_router.dart';
 import 'package:vc_taskcontrol/src/settings/theme/app_theme.dart';
 import 'package:vc_taskcontrol/src/storage/preferences/general_preferences.dart';
 
-class CircularMenuWidget extends StatefulWidget {
-  const CircularMenuWidget({Key? key}) : super(key: key);
+class CircularStartMenuWidget extends StatefulWidget {
+  const CircularStartMenuWidget({Key? key}) : super(key: key);
 
   @override
-  _CircularMenuWidgetState createState() => _CircularMenuWidgetState();
+  _CircularStartMenuWidgetState createState() =>
+      _CircularStartMenuWidgetState();
 }
 
-class _CircularMenuWidgetState extends State<CircularMenuWidget> {
+class _CircularStartMenuWidgetState extends State<CircularStartMenuWidget> {
   String _selectionLabel = 'Ningún';
   Color _selectionColor = AppColors.accent;
 
@@ -35,7 +36,7 @@ class _CircularMenuWidgetState extends State<CircularMenuWidget> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              const TextSpan(text: ' opción seleccionada.'),
+              const TextSpan(text: ' opción seleccionada. ajuste Aplicación: '),
             ],
           ),
         ),
@@ -47,19 +48,23 @@ class _CircularMenuWidgetState extends State<CircularMenuWidget> {
           onTap: () {
             setState(() {
               _selectionColor = AppColors.primary;
-              _selectionLabel = 'Inicio';
+              _selectionLabel = 'Start Page';
             });
           },
         ),
-
         CircularMenuItem(
-          icon: Icons.barcode_reader,
-          color: AppColors.secondary,
+          icon: Icons.list,
+          color: AppColors.accent,
+          badgeLabel: 'Loading Card Lists',
           onTap: () {
             setState(() {
-              _selectionColor = AppColors.secondary;
-              _selectionLabel = 'Production Time';
-              context.push('/prodtime');
+              _selectionColor = AppColors.accent;
+              _selectionLabel = 'Loading Card Lists';
+              final location = GoRouterState.of(context).matchedLocation;
+              if (location != '/settingsApp') {
+                GeneralPreferences.currentModule = 'settingsApp';
+                context.push('/settingsApp');
+              }
             });
           },
         ),
@@ -69,44 +74,23 @@ class _CircularMenuWidgetState extends State<CircularMenuWidget> {
           onTap: () {
             setState(() {
               _selectionColor = AppColors.secondary;
-              _selectionLabel = 'Buscar';
+              _selectionLabel = 'Buscar Registros';
             });
           },
         ),
-        // CircularMenuItem(
-        //   icon: Icons.settings,
-        //   color: AppColors.accent,
-        //   badgeLabel: 'Settings',
-        //   onTap: () {
-        //     setState(() {
-        //       _selectionColor = AppColors.accent;
-        //       _selectionLabel = 'Settings';
-        //       final location = GoRouterState.of(context).matchedLocation;
-        //       if (location != '/settings') {
-        //         GeneralPreferences.currentModule = 'Settings';
-        //         context.push('/settings');
-        //       }
-        //     });
-        //   },
-        // ),
+
         CircularMenuItem(
-          icon: Icons.app_settings_alt,
-          color: AppColors.accent,
-          badgeLabel: 'Start App Settings',
+          icon: Icons.bluetooth,
+          color: AppColors.success,
           onTap: () {
             setState(() {
-              _selectionColor = AppColors.accent;
-              _selectionLabel = 'Start App Settings';
-              final location = GoRouterState.of(context).matchedLocation;
-              if (location != '/start_app') {
-                GeneralPreferences.currentModule = 'start_app';
-                context.push('/start_app');
-              }
+              _selectionColor = AppColors.success;
+              _selectionLabel = 'Bluetooth';
             });
           },
         ),
         CircularMenuItem(
-          icon: Icons.qr_code_2_sharp, // Nuevo icono reemplazando a "chat"
+          icon: Icons.qr_code_2_sharp,
           color: AppColors.primary,
           onTap: () {
             setState(() {
@@ -120,17 +104,17 @@ class _CircularMenuWidgetState extends State<CircularMenuWidget> {
             });
           },
         ),
-        // CircularMenuItem(
-        //   icon: Icons.monitor, // Nuevo icono para báscula
-        //   color: AppColors.warning,
-        //   onTap: () {
-        //     setState(() {
-        //       _selectionColor = AppColors.warning;
-        //       _selectionLabel = 'Monitoring';
-        //       context.push('/monitoring');
-        //     });
-        //   },
-        // ),
+        CircularMenuItem(
+          icon: Icons.monitor, // Nuevo icono para báscula
+          color: AppColors.warning,
+          onTap: () {
+            setState(() {
+              _selectionColor = AppColors.warning;
+              _selectionLabel = 'Monitoring';
+              context.push('/monitoring');
+            });
+          },
+        ),
       ],
     );
   }

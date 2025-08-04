@@ -1,5 +1,7 @@
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:vc_taskcontrol/src/pages/controltask/startapp/settings_app_page.dart';
+import 'package:vc_taskcontrol/src/pages/controltask/startapp/start_app_page.dart';
 import 'package:vc_taskcontrol/src/pages/scanner/test_scanner_page.dart';
 
 import '../pages/pages_base.dart';
@@ -25,6 +27,11 @@ GoRouter createRouter(ConnectionProvider connectionProvider) {
       GoRoute(
         path: '/scannertest',
         builder: (context, state) => TestScanPage(),
+      ),
+      GoRoute(path: '/start_app', builder: (context, state) => StartAppPage()),
+      GoRoute(
+        path: '/settingsApp',
+        builder: (context, state) => SettingsStartAppPage(),
       ),
       GoRoute(
         path: '/no-connection',

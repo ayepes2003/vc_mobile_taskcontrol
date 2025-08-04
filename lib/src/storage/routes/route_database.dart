@@ -261,6 +261,22 @@ class RouteDatabase {
     return null;
   }
 
+  // Obtener ID de ruta local por código de proceso
+  Future<int?> getRouteCardIdByCodeProces(String codeProces) async {
+    final db = await database;
+    final maps = await db.query(
+      'route_cards',
+      columns: ['id'],
+      where: 'code_proces = ?',
+      whereArgs: [codeProces],
+      limit: 1,
+    );
+    if (maps.isNotEmpty) {
+      return maps.first['id'] as int;
+    }
+    return null;
+  }
+
   // Obtener suma total de cantidades registradas en lecturas para un código de proceso
   Future<int> getTotalRegisteredQuantity(String codeProces) async {
     final db = await database;
@@ -288,22 +304,6 @@ class RouteDatabase {
     );
   }
 
-  // Obtener ID de ruta local por código de proceso
-  Future<int?> getRouteCardIdByCodeProces(String codeProces) async {
-    final db = await database;
-    final maps = await db.query(
-      'route_cards',
-      columns: ['id'],
-      where: 'code_proces = ?',
-      whereArgs: [codeProces],
-      limit: 1,
-    );
-    if (maps.isNotEmpty) {
-      return maps.first['id'] as int;
-    }
-    return null;
-  }
-
   // Obtener lecturas recientes con JOIN para obtener ruta completa (con límite)
   Future<List<RouteCardRead>> getRecentReads({int limit = 50}) async {
     final db = await database;
@@ -314,6 +314,9 @@ class RouteDatabase {
              r.entered_quantity,
              r.difference,
              r.read_at,
+             r.section,
+             r.subsection,
+             r.selected_hour_range,
              r.device_id as read_device_id,
              r.status_id as read_status_id,
              r.sync_attempts as read_sync_attempts,
@@ -336,6 +339,10 @@ class RouteDatabase {
           readAt: DateTime.tryParse(row['read_at'] as String) ?? DateTime.now(),
           status: row['read_status_id']?.toString(),
           deviceId: row['read_device_id']?.toString(),
+          section: row['section']?.toString(),
+          subsection: row['subsection']?.toString(),
+          supervisor: row['supervisor']?.toString(),
+          selectedHourRange: row['selected_hour_range']?.toString(),
           syncAttempts: row['read_sync_attempts'] as int?,
         );
       } catch (e) {
@@ -359,12 +366,17 @@ class RouteDatabase {
   Future<void> clearAllReads() async {
     final db = await database;
     await db.delete('route_card_reads');
-    await db.delete('route_initial_data');
+    // await db.delete('route_initial_data');
+  }
+
+  Future<void> clearAllRouteCards() async {
+    final db = await database;
+    await db.delete('route_cards');
   }
 
   Future<void> clearAllData() async {
     final db = await database;
-    // await db.delete('route_cards');
+
     await db.delete('route_card_reads');
     await db.delete('route_initial_data');
   }

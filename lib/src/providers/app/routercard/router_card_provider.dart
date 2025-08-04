@@ -35,7 +35,7 @@ class RouteCardProvider with ChangeNotifier {
   List<RouteCard> get routes => List.unmodifiable(_routes);
   List<RouteInitialData> get routesInitial => List.unmodifiable(_routesInitial);
   List<RouteCardRead> get recentReads => List.unmodifiable(_recentReads);
-  List<RouteCardRead> get recentReadsLimited => _recentReads.take(8).toList();
+  List<RouteCardRead> get recentReadsLimited => _recentReads.take(20).toList();
   bool get isLoading => _isLoading;
 
   // Configuración (puedes adaptar o sacar si no lo usas)
@@ -216,12 +216,6 @@ class RouteCardProvider with ChangeNotifier {
     final int difference =
         initialQuantity - (totalRegistered + enteredQuantity);
 
-    final String? section = routeDataProvider.section;
-
-    print(
-      'Valores a insertar: supervisor=${routeDataProvider.supervisor}, hour=${routeDataProvider.selectedHourRange}, subsection=${routeDataProvider.subsection}, operator=${routeDataProvider.operatorName}',
-    );
-
     await routeDatabase.insertRead({
       'route_card_id': routeCardId,
       'code_proces': card.codeProces,
@@ -239,9 +233,9 @@ class RouteCardProvider with ChangeNotifier {
       'subsection': routeDataProvider.subsection,
       'operator': routeDataProvider.operatorName,
       'supervisory_id': routeDataProvider.selectedSupervisorId,
-      'section_id': routeDataProvider.selectedSection?.id,
-      // 'subsection_id': routeDataProvider.selectedSubsection?.id,
-      // 'operator_id': routeDataProvider.selectedOperator?.id,
+      'section_id': routeDataProvider.selectedSectionId,
+      'subsection_id': routeDataProvider.selectedSubsectionId,
+      'operator_id': routeDataProvider.selectedOperatorId,
 
       // Aquí si usas accumDiff, calcula y pásalo igual (deja null por ahora si no tienes lógica)
       'accum_diff': null,
@@ -264,17 +258,34 @@ class RouteCardProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  /// Borra todas las lecturas locales
-  Future<void> clearAllReads() async {
-    final db = await routeDatabase.database;
-    await db.delete('route_card_reads');
-    _recentReads = [];
-    notifyListeners();
-  }
+  // /// Borra todas las lecturas locales
+  // Future<void> clearAllReads() async {
+  //   final db = await routeDatabase.database;
+  //   await db.delete('route_card_reads');
+  //   _recentReads = [];
+  //   notifyListeners();
+  // }
 
   /// Método util para limpiar strings
   String limpiar(String s) =>
       s.trim().replaceAll('\r', '').replaceAll('\n', '').toLowerCase();
+
+  RouteCard? findByCodeProcesAndSectionId(String code, int selectedSectionId) {
+    final buscado = limpiar(code);
+    for (final rc in _routes) {
+      if (limpiar(rc.codeProces) == buscado &&
+          int.tryParse(rc.sectionId) == selectedSectionId) {
+        print(
+          'Match found: "${rc.codeProces} Quantity: ${rc.initialQuantity}" with SectionId: ${rc.sectionId}',
+        );
+        return rc;
+      }
+    }
+    print(
+      'No match found for code "$code" with sectionId $selectedSectionId after cleaning',
+    );
+    return null;
+  }
 
   /// Buscar ruta en memoria por código de proceso
   RouteCard? findByCodeProces(String code) {
@@ -409,8 +420,126 @@ class RouteCardProvider with ChangeNotifier {
     // ... otras columnas ...
   ];
 
+  final columnsApp = [
+    {
+      'key': 'codeProces',
+      'titulo': 'TarjetaNo',
+      'ancho': 80.0,
+      'align': TextAlign.left,
+      'colorFondo': Colors.white, // reemplaza con tu color corporativo
+      'colorTexto': Colors.black,
+      'visible': true,
+      'tooltip': 'Número único de la tarjeta de ruta',
+      'icono': Icons.confirmation_number_outlined,
+    },
+
+    {
+      'key': 'codePiece',
+      'titulo': 'Pieza',
+      'ancho': 80.0,
+      'align': TextAlign.left,
+      'colorFondo': Colors.white,
+      'colorTexto': Colors.black,
+      'visible': true,
+      'tooltip': 'Código de la pieza',
+      'icono': Icons.precision_manufacturing_outlined,
+    },
+    {
+      'key': 'totalPiece',
+      'titulo': 'Cant Inicial',
+      'ancho': 50.0,
+      'align': TextAlign.right,
+      'colorFondo': Colors.white,
+      'colorTexto': Colors.black,
+      'visible': true,
+      'tooltip': 'Cantidad estimada esperada',
+      'icono': Icons.numbers_outlined,
+    },
+    {
+      'key': 'quantity',
+      'titulo': 'Cant Inicial',
+      'ancho': 60.0,
+      'align': TextAlign.right,
+      'colorFondo': Colors.white,
+      'colorTexto': Colors.black,
+      'visible': false,
+      'tooltip': 'Cantidad estimada esperada',
+      'icono': Icons.numbers_outlined,
+    },
+    {
+      'key': 'enteredQuantity',
+      'titulo': 'Digitada',
+      'ancho': 50.0,
+      'align': TextAlign.right,
+      'colorFondo': Colors.white,
+      'colorTexto': Colors.black,
+      'visible': true,
+      'tooltip': 'Cantidad ingresada al leer',
+      'icono': Icons.edit_outlined,
+    },
+    {
+      'key': 'status',
+      'titulo': 'Estado',
+      'ancho': 60.0,
+      'align': TextAlign.center,
+      'colorFondo': Colors.white,
+      'colorTexto': Colors.black,
+      'visible': true,
+      'tooltip': 'Estado de la lectura',
+      'icono': Icons.info_outline,
+    },
+    {
+      'key': 'section',
+      'titulo': 'Sección',
+      'ancho': 60.0,
+      'align': TextAlign.center,
+      'colorFondo': Colors.white,
+      'colorTexto': Colors.black,
+      'visible': true,
+      'tooltip': 'Estado de la lectura',
+      'icono': Icons.table_chart,
+    },
+    {
+      'key': 'subsection',
+      'titulo': 'Subsección',
+      'ancho': 60.0,
+      'align': TextAlign.center,
+      'colorFondo': Colors.white,
+      'colorTexto': Colors.black,
+      'visible': true,
+      'tooltip': 'Centro trabajo o subsección',
+      'icono': Icons.wallet,
+    },
+    {
+      'key': 'selectedHourRange',
+      'titulo': 'HourRange',
+      'ancho': 90.0,
+      'align': TextAlign.center,
+      'colorFondo': Colors.white,
+      'colorTexto': Colors.black,
+      'visible': true,
+      'tooltip': 'Horario',
+      'icono': Icons.access_time_outlined,
+    },
+    {
+      'key': 'item',
+      'titulo': 'Item',
+      'ancho': 250.0,
+      'align': TextAlign.left,
+      'colorFondo': Colors.white,
+      'colorTexto': Colors.black,
+      'visible': true,
+      'tooltip': 'Referente a producto/mueble',
+      'icono': Icons.kitchen,
+    },
+  ];
+
   List<Map<String, dynamic>> get columnsTabletVisibles {
     return columnsTablet.where((col) => col['visible'] as bool).toList();
+  }
+
+  List<Map<String, dynamic>> get columnsAppVisibles {
+    return columnsApp.where((col) => col['visible'] as bool).toList();
   }
 
   String getCellValue(RouteCardRead record, String key) {
@@ -433,7 +562,20 @@ class RouteCardProvider with ChangeNotifier {
         print('DEBUG: difference handed to cell: ${record.difference}');
         return record.difference.toString();
       case 'status':
+        if (record.status == '0' || record.status?.toLowerCase() == 'pending')
+          return 'Pendiente';
+        if (record.status == '1' || record.status?.toLowerCase() == 'read')
+          return 'Leído';
+        if (record.status == '2' ||
+            record.status?.toLowerCase() == 'terminated')
+          return 'Terminado';
         return record.status ?? 'N/A';
+      case 'section':
+        return record.section ?? '';
+      case 'subsection':
+        return record.subsection ?? '';
+      case 'selectedHourRange':
+        return record.selectedHourRange ?? '';
       default:
         return '';
     }

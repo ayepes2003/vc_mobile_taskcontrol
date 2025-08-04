@@ -164,17 +164,17 @@ class RouteCardRead {
           return 'Pending';
         case '1':
         case 'read':
-          return 'Read';
+          return 'Leido';
         case '2':
         case 'terminated':
-          return 'Terminated';
+          return 'Terminado';
         default:
           return status!;
       }
     }
-    if (card == null) return 'Pending';
+    if (card == null) return 'Pendiente';
     if (enteredQuantity == (int.tryParse(card!.quantity) ?? 0))
-      return 'Terminated';
+      return 'Terminado';
     return 'Read';
   }
 }
