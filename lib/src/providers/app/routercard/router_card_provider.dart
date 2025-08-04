@@ -127,6 +127,9 @@ class RouteCardProvider with ChangeNotifier {
       final response = await dioService.getRequest(
         '/route-cards-active?section_name=$sectionName',
       );
+      print(
+        'Base URL actual de Dio: ${dioService.dio.options.baseUrl}/sections/$sectionName',
+      );
       final dataList =
           (response['data']['data'] as List)
               .map((item) => RouteCard.fromJson(item))

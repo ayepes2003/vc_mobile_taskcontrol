@@ -118,9 +118,18 @@ class _SettingsStartAppPageState extends State<SettingsStartAppPage> {
   Widget build(BuildContext context) {
     final isConnected = Provider.of<ConnectionProvider>(context).isConnected;
     final provider = Provider.of<RouteCardProvider>(context);
-    if (provider.isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
+    // if (provider.isLoading) {
+    //   return Center(
+    //     child: Column(
+    //       mainAxisSize: MainAxisSize.min,
+    //       children: const [
+    //         CircularProgressIndicator(),
+    //         SizedBox(height: 12),
+    //         Text('Cargando rutas, por favor espera...'),
+    //       ],
+    //     ),
+    //   );
+    // }
     // final hasData =
     //     (provider.routes.isNotEmpty || provider.recentReads.isNotEmpty);
 
@@ -145,75 +154,88 @@ class _SettingsStartAppPageState extends State<SettingsStartAppPage> {
       ),
       drawer: const CustomDrawerMenu(),
       body: SafeArea(
-        child: Column(
+        child: Stack(
           children: [
-            // HEADER: fila horizontal scrollable para botones
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: _headerBar(),
-              ),
-            ),
-
-            // CONTENIDO EXPANDIDO: tabla scrollable sin overlap
-            Expanded(
-              child:
-                  provider.recentReadsLimited.isNotEmpty
-                      ? Column(
-                        children: [
-                          Expanded(
-                            child: SingleChildScrollView(
-                              scrollDirection: Axis.horizontal,
-                              child: ConstrainedBox(
-                                constraints: BoxConstraints(
-                                  minWidth: MediaQuery.of(context).size.width,
-                                ),
-                                child: SingleChildScrollView(
-                                  scrollDirection: Axis.vertical,
-                                  child: Row(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Padding(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 10,
-                                        ),
-                                        child: RouteCardTablet(
-                                          columns: provider.columnsAppVisibles,
-                                          rows: provider.recentReadsLimited,
-                                        ),
-                                      ),
-                                    ],
+            Column(
+              children: [
+                // HEADER fijo siempre visible
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 8,
+                    horizontal: 12,
+                  ),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: _headerBar(),
+                  ),
+                ),
+                // Area expandida que incluye tabla o mensaje
+                Expanded(
+                  child:
+                      provider.recentReadsLimited.isEmpty
+                          ? Center(
+                            child: Text(
+                              'No hay registros de Tarjetas de Ruta Leidas.',
+                              style: TextStyle(
+                                fontSize: 18,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          )
+                          : SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: ConstrainedBox(
+                              constraints: BoxConstraints(
+                                minWidth: MediaQuery.of(context).size.width,
+                              ),
+                              child: SingleChildScrollView(
+                                scrollDirection: Axis.vertical,
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                  ),
+                                  child: RouteCardTablet(
+                                    columns: provider.columnsAppVisibles,
+                                    rows: provider.recentReadsLimited,
                                   ),
                                 ),
                               ),
                             ),
                           ),
-                        ],
-                      )
-                      : Center(
-                        child: Text(
-                          'No hay registros de Tarjetas de Ruta Leidas.',
-                          style: TextStyle(fontSize: 18, color: Colors.grey),
-                        ),
-                      ),
+                ),
+                // FOOTER fijo
+                Container(
+                  height: 50,
+                  width: double.infinity,
+                  color: Colors.grey.shade200,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    _footerMessage,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
             ),
-            // FOOTER: área fija para mensajes o resumen
-            Container(
-              height: 50,
-              width: double.infinity,
-              color: Colors.grey.shade200,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              alignment: Alignment.centerLeft,
-              child: Text(
-                _footerMessage,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
+
+            // Loader solo sobre el área expandida (tabla)
+            if (provider.isLoading)
+              Positioned(
+                top: 60, // Ajusta con la altura del header para que no lo cubra
+                left: 0,
+                right: 0,
+                bottom: 50, // Altura del footer para dejar visible
+                child: Container(
+                  color: Colors.black.withOpacity(0.3),
+                  child: const Center(child: CircularProgressIndicator()),
                 ),
               ),
-            ),
           ],
         ),
       ),
