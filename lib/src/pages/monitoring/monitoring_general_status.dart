@@ -21,7 +21,7 @@ class MonitoringGeneralStatusPage extends StatelessWidget {
         usuario: 'Usuario: ayepes2003@yahoo.es',
         fechaHora: '26/03/2025 20:00',
         isConnected: isConnected,
-        title_app: 'Manual Time Control Production',
+        title_app: 'Production Time Control(HorApp)',
       ),
       body: Consumer<MockDataProvider>(
         builder: (context, dataProvider, child) {

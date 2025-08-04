@@ -96,7 +96,7 @@ class RouteCard {
       statusColor: trimStr(json['status_color']),
       statusDescription: trimStr(json['status_description']),
       // Campos locales no vienen en el JSON
-      deviceId: null,
+      deviceId: trimStr(json['device_id']),
       statusId: null,
       syncAttempts: null,
       captureDate: null,
@@ -171,8 +171,8 @@ class RouteCard {
   }
 
   /// Convertir a Map para guardar en SQLite (incluye campos locales)
-  Map<String, dynamic> toMap() {
-    return {
+  Map<String, dynamic> toMap({bool forInsert = false}) {
+    final map = {
       'id': id,
       'code_proces': codeProces,
       'route_num': routeNum,
@@ -203,5 +203,11 @@ class RouteCard {
       'capture_date': captureDate,
       'update_timestamp': updateTimestamp,
     };
+    if (!forInsert) {
+      // Solo incluye 'id' si NO es para insert (por ejemplo para update)
+      map['id'] = id;
+    }
+
+    return map;
   }
 }

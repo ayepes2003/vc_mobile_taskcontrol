@@ -32,6 +32,11 @@ class _PiecesStepWidgetState extends State<PiecesStepWidget> {
   @override
   void initState() {
     super.initState();
+    Future.microtask(() async {
+      final provider = Provider.of<RouteCardProvider>(context, listen: false);
+      provider.loadRoutesFromLocal();
+      await provider.loadRecentReads();
+    });
     _searchController = TextEditingController();
     _searchFocusNode = FocusNode();
   }
@@ -44,12 +49,35 @@ class _PiecesStepWidgetState extends State<PiecesStepWidget> {
 
   Future<void> _onSearchSubmitted(String code) async {
     final provider = Provider.of<RouteCardProvider>(context, listen: false);
-    final resultado = provider.findByCodeProces(code.trim());
+    final routeDataProvider = Provider.of<RouteDataProvider>(
+      context,
+      listen: false,
+    );
+    // final resultado = provider.findByCodeProces(code.trim());
+    final selectedSectionId =
+        routeDataProvider.selectedSectionId ??
+        AppPreferences.getSectionId() ??
+        0;
+    final resultado = provider.findByCodeProcesAndSectionId(
+      code.trim(),
+      selectedSectionId,
+    );
 
     setState(() {
       _resultado = resultado;
     });
 
+    if (resultado == null) {
+      // Aquí se muestra el mensaje si NO se encontró nada
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'No se encontró registro con ese código en la sección seleccionada.',
+          ),
+        ),
+      );
+      return;
+    }
     if (resultado != null) {
       final int initialQuantity =
           int.tryParse(resultado.totalPiece ?? '0') ?? 0;
@@ -60,6 +88,7 @@ class _PiecesStepWidgetState extends State<PiecesStepWidget> {
       final tolerance = provider.tolerance;
       final toleranceDifference = provider.toleranceDifference;
       final int remaining = initialQuantity - registeredQuantity;
+
       if (remaining <= 0) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -67,6 +96,8 @@ class _PiecesStepWidgetState extends State<PiecesStepWidget> {
           ),
         );
         return;
+
+        //no hay tarjeta por seccion y codigo
       }
 
       final cantidadStr = await showQuantityDialog(
@@ -81,17 +112,22 @@ class _PiecesStepWidgetState extends State<PiecesStepWidget> {
         int cantidad = int.tryParse(cantidadStr) ?? 0;
 
         await AppPreferences.setProject(resultado.projectName);
+        await AppPreferences.setSectionId(int.parse(resultado.sectionId));
 
         Provider.of<RouteDataProvider>(context, listen: false).setFromRoute(
           project: resultado.projectName,
           itemCode: resultado.itemCode,
+          section: resultado.sectionName,
           totalPiece: initialQuantity,
+          // selectSectionId: int.tryParse(resultado.sectionId),
         );
         Provider.of<RouteDataProvider>(
           context,
           listen: false,
         ).setRealQuantity(cantidad);
+
         provider.addRead(resultado, cantidad);
+
         await provider.addReadLocal(resultado, cantidad);
       }
     }
@@ -250,6 +286,20 @@ class _PiecesStepWidgetState extends State<PiecesStepWidget> {
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<RouteCardProvider>(context);
+    if (provider.isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    final routes = provider.routes;
+    final recentReads = provider.recentReads;
+
+    if (routes.isEmpty && recentReads.isEmpty) {
+      return const Center(
+        child: Text(
+          'No hay registros de Tarjetas de Ruta disponibles.',
+          style: TextStyle(fontSize: 18, color: Colors.grey),
+        ),
+      );
+    }
     final columns =
         provider.columnsTabletVisibles; // Columnas con configuración
     final rows = provider.recentReadsLimited; // Los últimos 50 registros leídos
@@ -333,6 +383,7 @@ class _PiecesStepWidgetState extends State<PiecesStepWidget> {
               width: 300,
               child: TextField(
                 keyboardType: TextInputType.number,
+                // keyboardType: TextInputType.text para digitar texto,
                 controller: _searchController,
                 focusNode: _searchFocusNode,
                 decoration: InputDecoration(

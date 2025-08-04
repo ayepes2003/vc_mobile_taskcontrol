@@ -7,7 +7,7 @@ import 'package:vc_taskcontrol/src/models/operator.dart';
 import 'package:vc_taskcontrol/src/models/project.dart';
 import 'package:vc_taskcontrol/src/models/section.dart';
 import 'package:vc_taskcontrol/src/models/stepconfig.dart';
-import 'package:vc_taskcontrol/src/models/supervisor.dart' show Supervisor;
+// import 'package:vc_taskcontrol/src/models/supervisor.dart' show Supervisor;
 import 'package:vc_taskcontrol/src/pages/controltask/widgets/central_content.dart';
 import 'package:vc_taskcontrol/src/pages/controltask/widgets/menus/side_menu_widget.dart';
 import 'package:vc_taskcontrol/src/providers/app/routercard/hour_ranges_provider.dart';
@@ -20,6 +20,7 @@ import 'package:vc_taskcontrol/src/providers/app/routercard/route_data_provider.
 import 'package:vc_taskcontrol/src/providers/app/routercard/router_card_provider.dart';
 import 'package:vc_taskcontrol/src/services/connection_provider.dart';
 import 'package:vc_taskcontrol/src/storage/preferences/app_preferences.dart';
+import 'package:vc_taskcontrol/src/storage/preferences/general_preferences.dart';
 import 'package:vc_taskcontrol/src/storage/routes/route_database.dart';
 import 'package:vc_taskcontrol/src/widgets/custom_app_bar.dart';
 import 'widgets/widgets_page.dart';
@@ -62,19 +63,19 @@ class _ControltaskBasePageState extends State<ControltaskBasePage> {
       //   listen: false,
       // ).loadRoutesFromCSV();
 
+      // Simulación: carga desde SharedPreferences o algún servicio local
+      final savedSection = await AppPreferences.getSection(); // String
+      final savedSubsection = await AppPreferences.getSubsection(); // String
+
       Provider.of<RouteCardProvider>(
         context,
         listen: false,
-      ).loadRoutesFromApi();
+      ).loadRoutesFromApi(sectionName: savedSection);
 
       final routeProvider = Provider.of<RouteDataProvider>(
         context,
         listen: false,
       );
-
-      // Simulación: carga desde SharedPreferences o algún servicio local
-      final savedSection = await AppPreferences.getSection(); // String
-      final savedSubsection = await AppPreferences.getSubsection(); // String
 
       // 👉 Ahora tú buscas en tu lista de secciones (del DataProvider)
       final allSections =
@@ -114,34 +115,57 @@ class _ControltaskBasePageState extends State<ControltaskBasePage> {
     });
   }
 
-  Future<void> _handleRefresh(BuildContext context) async {
-    await AppPreferences.clearAll();
-    Provider.of<RouteDataProvider>(context, listen: false).clear();
+  Future<void> loadAllRoutes() async {
+    await Future.wait([
+      Provider.of<RouteCardProvider>(
+        context,
+        listen: false,
+      ).loadRoutesFromApi(),
 
-    Provider.of<SupervisorsProvider>(
-      context,
-      listen: false,
-    ).loadSupervisorsFromApi();
-    //hora hora
-    Provider.of<HourRangesProvider>(
-      context,
-      listen: false,
-    ).loadHourRangesFromApi();
-    Provider.of<SectionsProvider>(context, listen: false).loadSectionsFromApi();
-    Provider.of<OperatorsProvider>(
-      context,
-      listen: false,
-    ).loadOperatorsFromApi();
-
-    // rutas
-    Provider.of<RouteCardProvider>(context, listen: false).loadRoutesFromApi();
-    await RouteDatabase().clearAllReads();
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Actualizando datos servidor y limpiando sesión'),
-      ),
-    );
+      //   Provider.of<RouteCardProvider>(
+      //     context,
+      //     listen: false,
+      //   ).loadInitialRoutesFromApi(),
+    ]);
   }
+
+  // Future<void> _handleRefresh(BuildContext context) async {
+  //   // Provider.of<RouteDataProvider>(context, listen: false).clear();
+  //   await RouteDatabase().clearAllReads();
+  //   Provider.of<SupervisorsProvider>(
+  //     context,
+  //     listen: false,
+  //   ).loadSupervisorsFromApi();
+  //   //hora hora
+  //   Provider.of<HourRangesProvider>(
+  //     context,
+  //     listen: false,
+  //   ).loadHourRangesFromApi();
+
+  //   Provider.of<SectionsProvider>(context, listen: false).loadSectionsFromApi();
+  //   Provider.of<OperatorsProvider>(
+  //     context,
+  //     listen: false,
+  //   ).loadOperatorsFromApi();
+
+  //   // rutas
+  //   await loadAllRoutes();
+
+  //   await Provider.of<RouteCardProvider>(
+  //     context,
+  //     listen: false,
+  //   ).loadRoutesFromLocal();
+
+  //   await Provider.of<RouteCardProvider>(
+  //     context,
+  //     listen: false,
+  //   ).loadRecentReads();
+  //   ScaffoldMessenger.of(context).showSnackBar(
+  //     const SnackBar(
+  //       content: Text('Actualizando datos servidor y limpiando sesión'),
+  //     ),
+  //   );
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -149,8 +173,8 @@ class _ControltaskBasePageState extends State<ControltaskBasePage> {
     final stepsProvider = Provider.of<StepsProvider>(context);
     final List<StepConfig> steps = stepsProvider.steps;
 
-    final supervisorsProvider = Provider.of<SupervisorsProvider>(context);
-    final List<Supervisor> supervisors = supervisorsProvider.supervisors;
+    // final supervisorsProvider = Provider.of<SupervisorsProvider>(context);
+    // final List<Supervisor> supervisors = supervisorsProvider.supervisors;
 
     // final List<StepConfig> steps = dataProvider.steps;
     // final List<Supervisor> supervisors = dataProvider.supervisors;
@@ -159,15 +183,15 @@ class _ControltaskBasePageState extends State<ControltaskBasePage> {
     final routeData = context.watch<RouteDataProvider>();
 
     // Obtén el último registro leído (si hay)
-    final lastRead =
-        provider.recentReads.isNotEmpty ? provider.recentReads.first : null;
+    // final lastRead =
+    // provider.recentReads.isNotEmpty ? provider.recentReads.first : null;
 
     final List<Project> projects = dataProvider.projects;
     final List<Section> sections = dataProvider.sections;
     final List<Operator> operators = dataProvider.operators;
     final List<String> subsections =
         routeData.selectedSection?.subsections ?? [];
-
+    final appName = GeneralPreferences.appName;
     final isConnected = Provider.of<ConnectionProvider>(context).isConnected;
 
     return Scaffold(
@@ -177,7 +201,7 @@ class _ControltaskBasePageState extends State<ControltaskBasePage> {
         usuario: 'Usuario: ayepes2003@yahoo.es',
         fechaHora: '26/03/2025 20:00',
         isConnected: isConnected,
-        title_app: 'Production Time Control',
+        title_app: 'Production Time Control(HorApp)',
       ),
       body: Row(
         children: [
@@ -208,7 +232,7 @@ class _ControltaskBasePageState extends State<ControltaskBasePage> {
                         supervisor.id,
                       ); // ✅ nuevo
                       await AppPreferences.setSupervisor(supervisor.name);
-
+                      await AppPreferences.setSupervisorId(supervisor.id);
                       setState(() {
                         selectionStep = getNextStepIndex(steps, "supervisor");
                       });
@@ -229,14 +253,12 @@ class _ControltaskBasePageState extends State<ControltaskBasePage> {
                         listen: false,
                       );
 
-                      routeProvider.setSelectedSection(
-                        section,
-                      ); // actualizas ambos
-                      routeProvider.setSection(
-                        section.sectionName,
-                      ); // si quieres guardar el nombre “puro”
+                      routeProvider.setSelectedSection(section);
+                      routeProvider.setSection(section.sectionName);
 
                       await AppPreferences.setSection(section.sectionName);
+                      await AppPreferences.setSectionId(section.id);
+
                       setState(() {
                         selectionStep = steps.indexWhere(
                           (step) => step.name == "subsection",
@@ -258,10 +280,14 @@ class _ControltaskBasePageState extends State<ControltaskBasePage> {
                       ); // 👈 si usas el valor textual también
 
                       await AppPreferences.setSubsection(subsection);
+                      await AppPreferences.setSubsectionId(
+                        routeProvider.selectedSubsectionId ?? 0,
+                      );
                       setState(() {
                         selectionStep = getNextStepIndex(steps, "subsection");
                       });
                     },
+
                     onOperatorSelected: (operator) async {
                       final routeProvider = Provider.of<RouteDataProvider>(
                         context,
@@ -274,6 +300,7 @@ class _ControltaskBasePageState extends State<ControltaskBasePage> {
                       ); // ✅ Nuevo
 
                       await AppPreferences.setOperator(operator.name);
+                      await AppPreferences.setOperatorId(operator.id);
                       setState(() {
                         selectionStep = getNextStepIndex(steps, "operator");
                       });
@@ -282,6 +309,7 @@ class _ControltaskBasePageState extends State<ControltaskBasePage> {
                       final routeProvider = context.read<RouteDataProvider>();
                       routeProvider.setSelectedHourRange(range);
 
+                      await AppPreferences.setselectedHourRange(range);
                       setState(() {
                         selectionStep = getNextStepIndex(steps, 'hour_range');
                       });
@@ -296,28 +324,8 @@ class _ControltaskBasePageState extends State<ControltaskBasePage> {
             color: Colors.grey[100],
             child: Column(
               children: [
-                Row(
-                  children: [
-                    Tooltip(
-                      message: "Refrescar datos y limpiar sesión",
-                      child: IconButton(
-                        icon: const Icon(
-                          Icons.refresh,
-                          color: Colors.red,
-                          size: 30,
-                        ),
-                        style: IconButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          foregroundColor: Colors.red,
-                          padding: const EdgeInsets.all(12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        onPressed: () => _handleRefresh(context),
-                      ),
-                    ),
-                  ],
+                Row(children: [
+                   ],
                 ),
                 // const SizedBox(height: 5),
                 SummaryCardWidget(lastEntry: LastEntryWidget()),
@@ -329,46 +337,3 @@ class _ControltaskBasePageState extends State<ControltaskBasePage> {
     );
   }
 }
-
-
- //   ElevatedButton.icon(
-                    //     icon: Icon(Icons.refresh, color: Colors.red),
-                    //     // icon: Icon(Icons.delete_forever, color: Colors.red),
-                    //     style: ElevatedButton.styleFrom(
-                    //       backgroundColor: Colors.white,
-                    //       foregroundColor: Colors.red,
-                    //     ),
-                    //     label: Text('Refresh'),
-                    //     onPressed: () async {
-                    //       await AppPreferences.clearAll();
-                    //       // Provider.of<RouteDataProvider>(
-                    //       //   context,
-                    //       //   listen: false,
-                    //       // ).clear();
-                    //       Provider.of<SupervisorsProvider>(
-                    //         context,
-                    //         listen: false,
-                    //       ).loadSupervisorsFromApi();
-
-                    //       Provider.of<HourRangesProvider>(
-                    //         context,
-                    //         listen: false,
-                    //       ).loadHourRangesFromApi();
-
-                    //       Provider.of<SectionsProvider>(
-                    //         context,
-                    //         listen: false,
-                    //       ).loadSectionsFromApi();
-
-                    //       Provider.of<OperatorsProvider>(
-                    //         context,
-                    //         listen: false,
-                    //       ).loadOperatorsFromApi();
-
-                    //       ScaffoldMessenger.of(context).showSnackBar(
-                    //         SnackBar(
-                    //           content: Text('Preferencias y sesión borradas'),
-                    //         ),
-                    //       );
-                    //     },
-                    //   ),

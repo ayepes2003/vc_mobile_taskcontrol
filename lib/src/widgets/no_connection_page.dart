@@ -15,7 +15,7 @@ class NoConnectionPage extends StatelessWidget {
         usuario: 'Usuario: ayepes2003@yahoo.es',
         fechaHora: '26/03/2025 20:00',
         isConnected: isConnected ?? false,
-        title_app: 'Manual Time Control Production',
+        title_app: 'Production Time Control(HorApp)',
       ),
       body: Center(
         child: Column(

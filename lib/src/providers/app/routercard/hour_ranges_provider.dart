@@ -39,21 +39,10 @@ class HourRangesProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> OldloadHourRangesFromApi() async {
+  Future<void> loadHourRanges() async {
     try {
-      print('Base URL actual de Dio: ${dioService.dio.options.baseUrl}');
-      final now = DateTime.now();
-      final String time =
-          "${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}:00";
-      // final response = await dioService.getRequest('/shift-hours');
-      final response = await dioService.getRequest(
-        '/shift-hours',
-        queryParameters: {'time': time},
-      );
-      // Accede al primer elemento del array de "data"
-      final Map<String, dynamic> data =
-          (response['data']['data'] as List).first;
-
+      final response = await dioService.getRequest('/shift-hours');
+      final data = (response['data']['data'] as List).first;
       final model = HourRangeResponseModel.fromJson(data);
       hourRanges = model.hourRanges;
       currentShift = model.shift;

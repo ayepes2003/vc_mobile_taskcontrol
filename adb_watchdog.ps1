@@ -1,6 +1,6 @@
 # Reemplaza esta IP con la IP real de tu tablet
 $deviceIP = "192.168.1.44"
-$adbPort = "38711"
+$adbPort = "42991"
 $interval = 10  # Segundos entre chequeos
 
 Write-Host "Iniciando monitor ADB para $deviceIP : $adbPort"
