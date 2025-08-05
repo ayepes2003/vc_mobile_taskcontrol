@@ -26,6 +26,9 @@ class SettingsStartAppPage extends StatefulWidget {
 
 class _SettingsStartAppPageState extends State<SettingsStartAppPage> {
   String _footerMessage = 'Estado: listo';
+  String? _selectedSection;
+  List<String> _availableSections =
+      []; // Lista dummy o viene del provider/preferences
 
   @override
   void initState() {
@@ -270,6 +273,40 @@ class _SettingsStartAppPageState extends State<SettingsStartAppPage> {
     );
   }
 
+  Widget _buildSectionButtons() {
+    if (_availableSections.isEmpty) {
+      return const SizedBox.shrink(); // No muestra nada si no hay secciones
+    }
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children:
+            _availableSections.map((section) {
+              final isSelected = section == _selectedSection;
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor:
+                        isSelected ? Colors.blue : Colors.grey[300],
+                    foregroundColor: isSelected ? Colors.white : Colors.black,
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      _selectedSection = section;
+                      _footerMessage =
+                          'Sección Seleccionada: $_selectedSection';
+                    });
+                  },
+                  child: Text(section),
+                ),
+              );
+            }).toList(),
+      ),
+    );
+  }
+
   // Función auxiliar para crear icon buttons con tooltip
   Widget _buildIconButton({
     required String tooltip,
@@ -317,7 +354,13 @@ class _SettingsStartAppPageState extends State<SettingsStartAppPage> {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text('$sectionName: Cargando rutas...')),
             );
-            _handleLoadAllRoutes();
+            await Future.wait([
+              Provider.of<RouteCardProvider>(
+                context,
+                listen: false,
+              ).loadRoutesFromApi(sectionName: sectionName),
+            ]);
+            // _handleLoadAllRoutes();
           },
         ),
         _buildIconButton(

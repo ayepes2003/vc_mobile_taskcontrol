@@ -123,10 +123,8 @@ class RouteCardProvider with ChangeNotifier {
 
   Future<void> loadRoutesFromApi({String? sectionName}) async {
     _isLoading = true;
-    final sectionName = AppPreferences.getSection();
+    // final sectionName = AppPreferences.getSection();
     print('Cargando rutas desde API para sección: $sectionName');
-    notifyListeners();
-
     try {
       final response = await dioService.getRequest(
         '/route-cards-active?section_name=$sectionName',
@@ -147,10 +145,7 @@ class RouteCardProvider with ChangeNotifier {
       for (var route in dataList) {
         if (!localCodeProcesSet.contains(route.codeProces)) {
           await routeDatabase.insertOrUpdateRouteCard(route);
-        } else {
-          // Opcional: aquí también podrías comparar statusId para actualizar si cambió
-          // Por ahora omitimos para optimizar tiempo
-        }
+        } else {}
       }
       _routes = dataList;
       lastError = null;
@@ -159,9 +154,7 @@ class RouteCardProvider with ChangeNotifier {
       // print(e);
       _routes = [];
     }
-
     _isLoading = false;
-    AppPreferences.clearSection();
     notifyListeners();
   }
 

@@ -67,10 +67,10 @@ class _ControltaskBasePageState extends State<ControltaskBasePage> {
       final savedSection = await AppPreferences.getSection(); // String
       final savedSubsection = await AppPreferences.getSubsection(); // String
 
-      Provider.of<RouteCardProvider>(
-        context,
-        listen: false,
-      ).loadRoutesFromApi(sectionName: savedSection);
+      // Provider.of<RouteCardProvider>(
+      //   context,
+      //   listen: false,
+      // ).loadRoutesFromApi(sectionName: savedSection);
 
       final routeProvider = Provider.of<RouteDataProvider>(
         context,
@@ -215,11 +215,11 @@ class _ControltaskBasePageState extends State<ControltaskBasePage> {
                         listen: false,
                       );
 
-                      routeProvider.setSelectedSection(section);
-                      routeProvider.setSection(section.sectionName);
-
                       await AppPreferences.setSection(section.sectionName);
                       await AppPreferences.setSectionId(section.id);
+
+                      routeProvider.setSelectedSection(section);
+                      routeProvider.setSection(section.sectionName);
 
                       setState(() {
                         selectionStep = steps.indexWhere(
