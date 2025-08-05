@@ -9,6 +9,7 @@ import 'package:vc_taskcontrol/src/providers/app/routercard/operators_provider.d
 import 'package:vc_taskcontrol/src/providers/app/routercard/route_data_provider.dart';
 import 'package:vc_taskcontrol/src/providers/app/routercard/sections_provider.dart';
 import 'package:vc_taskcontrol/src/providers/app/routercard/supervisors_provider.dart';
+import 'package:vc_taskcontrol/src/storage/preferences/app_preferences.dart';
 import 'package:vc_taskcontrol/src/storage/preferences/general_preferences.dart';
 import 'package:vc_taskcontrol/src/providers/app/routercard/router_card_provider.dart';
 import 'package:vc_taskcontrol/src/services/connection_provider.dart';
@@ -34,9 +35,20 @@ class _SettingsStartAppPageState extends State<SettingsStartAppPage> {
       DeviceOrientation.landscapeRight,
     ]);
     Future.microtask(() async {
+      final routeProvider = Provider.of<RouteDataProvider>(
+        context,
+        listen: false,
+      );
       final provider = Provider.of<RouteCardProvider>(context, listen: false);
       provider.loadRoutesFromLocal();
       await provider.loadRecentReads();
+
+      final providerSection = routeProvider.section;
+      final prefsSection = await AppPreferences.getSection();
+      setState(() {
+        _footerMessage =
+            'Sección Provider: $providerSection | Sección Pref: $prefsSection Enviada : ${provider.currentLoadingSection ?? "ninguna"}';
+      });
     });
   }
 
@@ -44,6 +56,17 @@ class _SettingsStartAppPageState extends State<SettingsStartAppPage> {
   void dispose() {
     super.dispose();
   }
+
+  // void _updateFooterWithProviderSection() {
+  //   final provider = Provider.of<RouteDataProvider>(context, listen: false);
+  //   final prefsSection = _prefsSection ?? 'no cargada';
+  //   final providerSection = provider.currentLoadingSection ?? 'ninguna';
+
+  //   setState(() {
+  //     _footerMessage =
+  //         'Sección Provider: $providerSection | Sección Pref: $prefsSection';
+  //   });
+  // }
 
   Future<void> _handleLoadAllRoutes() async {
     await Future.wait([
@@ -118,6 +141,7 @@ class _SettingsStartAppPageState extends State<SettingsStartAppPage> {
   Widget build(BuildContext context) {
     final isConnected = Provider.of<ConnectionProvider>(context).isConnected;
     final provider = Provider.of<RouteCardProvider>(context);
+
     // if (provider.isLoading) {
     //   return Center(
     //     child: Column(
@@ -174,12 +198,16 @@ class _SettingsStartAppPageState extends State<SettingsStartAppPage> {
                   child:
                       provider.recentReadsLimited.isEmpty
                           ? Center(
-                            child: Text(
-                              'No hay registros de Tarjetas de Ruta Leidas.',
-                              style: TextStyle(
-                                fontSize: 18,
-                                color: Colors.grey,
-                              ),
+                            child: Column(
+                              children: [
+                                Text(
+                                  'No hay registros de Tarjetas de Ruta Leidas.',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                              ],
                             ),
                           )
                           : SingleChildScrollView(
@@ -278,12 +306,17 @@ class _SettingsStartAppPageState extends State<SettingsStartAppPage> {
             _footerMessage =
                 "Actualizando datos (Supervisores, Operadores, etc.)";
             _handleDataRefresh(context);
+            setState(() {});
           },
         ),
         _buildIconButton(
-          tooltip: "Descargar todas las tarjetas rutas por seccion",
+          tooltip: "Cargar todas las tarjetas rutas por seccion",
           icon: Icons.download_for_offline,
           onPressed: () async {
+            final sectionName = AppPreferences.getSection();
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('$sectionName: Cargando rutas...')),
+            );
             _handleLoadAllRoutes();
           },
         ),
@@ -325,7 +358,6 @@ class _SettingsStartAppPageState extends State<SettingsStartAppPage> {
           icon: Icons.delete_sweep,
           onPressed: () async {
             await _handleDeleteAllRoutes();
-            await _handleRefresh(context);
 
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('Se eliminaron todos los datos')),

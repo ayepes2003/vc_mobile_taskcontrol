@@ -31,6 +31,8 @@ class RouteCardProvider with ChangeNotifier {
   bool _isLoading = false;
   String? lastError;
 
+  String? _currentLoadingSection;
+  String? get currentLoadingSection => _currentLoadingSection;
   // Accesores para UI
   List<RouteCard> get routes => List.unmodifiable(_routes);
   List<RouteInitialData> get routesInitial => List.unmodifiable(_routesInitial);
@@ -121,8 +123,10 @@ class RouteCardProvider with ChangeNotifier {
 
   Future<void> loadRoutesFromApi({String? sectionName}) async {
     _isLoading = true;
-    notifyListeners();
     final sectionName = AppPreferences.getSection();
+    print('Cargando rutas desde API para sección: $sectionName');
+    notifyListeners();
+
     try {
       final response = await dioService.getRequest(
         '/route-cards-active?section_name=$sectionName',
@@ -148,7 +152,6 @@ class RouteCardProvider with ChangeNotifier {
           // Por ahora omitimos para optimizar tiempo
         }
       }
-
       _routes = dataList;
       lastError = null;
     } catch (e) {
@@ -158,6 +161,7 @@ class RouteCardProvider with ChangeNotifier {
     }
 
     _isLoading = false;
+    AppPreferences.clearSection();
     notifyListeners();
   }
 

@@ -5,6 +5,9 @@ import 'package:vc_taskcontrol/src/models/routescard/route_card.dart';
 import 'package:vc_taskcontrol/src/models/routescard/route_card_read.dart';
 import 'package:vc_taskcontrol/src/models/routescard/route_initial_data.dart';
 
+// await db.execute('''
+//     DROP TABLE IF EXISTS route_card_reads;
+//   ''');
 class RouteDatabase {
   static final RouteDatabase _instance = RouteDatabase._internal();
   factory RouteDatabase() => _instance;
@@ -90,10 +93,6 @@ class RouteDatabase {
           code_sales_erp TEXT
         )
       ''');
-
-    await db.execute('''
-      DROP TABLE IF EXISTS route_card_reads;
-    ''');
 
     // Tabla route_card_reads para registros de lectura/scan de rutas
     await db.execute('''
@@ -372,6 +371,7 @@ class RouteDatabase {
   Future<void> clearAllRouteCards() async {
     final db = await database;
     await db.delete('route_cards');
+    await db.delete('route_initial_data');
   }
 
   Future<void> clearAllData() async {
