@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:vc_taskcontrol/src/providers/app/routercard/route_data_provider.dart';
 import 'package:vc_taskcontrol/src/providers/app/routercard/router_card_provider.dart';
+import 'package:vc_taskcontrol/src/storage/preferences/app_preferences.dart';
+import 'package:vc_taskcontrol/src/storage/routes/route_database.dart';
 
 class SummaryCardWidget extends StatelessWidget {
   // final int? realQuantity;
@@ -124,17 +127,50 @@ class SummaryCardWidget extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Icon(Icons.history, size: 24, color: colorScheme.secondary),
-                  const SizedBox(width: 5),
-                  Text(
-                    'Sin datos recientes',
-                    style: textTheme.bodyLarge!.copyWith(
-                      color: colorScheme.secondary,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
+                  _buildIconButton(
+                    tooltip: "Cargar todas las tarjetas rutas por seccion",
+                    icon: Icons.download_for_offline,
+                    onPressed: () async {
+                      final sectionName = AppPreferences.getSection();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('$sectionName: Cargando rutas...'),
+                        ),
+                      );
+                      await Future.wait([
+                        Provider.of<RouteCardProvider>(
+                          context,
+                          listen: false,
+                        ).loadRoutesFromApi(sectionName: sectionName),
+                      ]);
+                    },
                   ),
+
+                  // _buildIconButton(
+                  //   tooltip: "Eliminar todas las tarjetas leídas",
+                  //   icon: Icons.delete_forever,
+                  //   onPressed: () async {
+                  //     await RouteDatabase().clearAllRouteCards();
+                  //     ScaffoldMessenger.of(context).showSnackBar(
+                  //       const SnackBar(
+                  //         content: Text(
+                  //           'Se eliminaron todas las tarjetas rutas.',
+                  //         ),
+                  //       ),
+                  //     );
+                  //   },
+                  // ),
+
+                  // Text(
+                  //   'Sin datos recientes',
+                  //   style: textTheme.bodyLarge!.copyWith(
+                  //     color: colorScheme.secondary,
+                  //     fontWeight: FontWeight.bold,
+                  //     fontSize: 16,
+                  //   ),
+                  // ),
                 ],
               ),
             ),
@@ -172,4 +208,29 @@ class SummaryCardWidget extends StatelessWidget {
       ),
     );
   }
+}
+
+// Función auxiliar para crear icon buttons con tooltip
+Widget _buildIconButton({
+  required String tooltip,
+  required IconData icon,
+  required VoidCallback onPressed,
+}) {
+  return Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 6),
+    child: Tooltip(
+      message: tooltip,
+      child: IconButton(
+        icon: Icon(icon, color: Colors.red, size: 28),
+        style: IconButton.styleFrom(
+          backgroundColor: Colors.white,
+          padding: const EdgeInsets.all(12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+        onPressed: onPressed,
+      ),
+    ),
+  );
 }

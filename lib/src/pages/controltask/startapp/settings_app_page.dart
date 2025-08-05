@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:vc_taskcontrol/src/models/routescard/route_card_read.dart';
 import 'package:vc_taskcontrol/src/pages/controltask/widgets/kpi_total/kpi_count_card.dart';
@@ -60,25 +61,14 @@ class _SettingsStartAppPageState extends State<SettingsStartAppPage> {
     super.dispose();
   }
 
-  // void _updateFooterWithProviderSection() {
-  //   final provider = Provider.of<RouteDataProvider>(context, listen: false);
-  //   final prefsSection = _prefsSection ?? 'no cargada';
-  //   final providerSection = provider.currentLoadingSection ?? 'ninguna';
-
-  //   setState(() {
-  //     _footerMessage =
-  //         'Sección Provider: $providerSection | Sección Pref: $prefsSection';
-  //   });
+  // Future<void> _handleLoadAllRoutes() async {
+  //   await Future.wait([
+  //     Provider.of<RouteCardProvider>(
+  //       context,
+  //       listen: false,
+  //     ).loadRoutesFromApi(),
+  //   ]);
   // }
-
-  Future<void> _handleLoadAllRoutes() async {
-    await Future.wait([
-      Provider.of<RouteCardProvider>(
-        context,
-        listen: false,
-      ).loadRoutesFromApi(),
-    ]);
-  }
 
   Future<void> _handleDeleteAllRoutes() async {
     await RouteDatabase().clearAllRouteCards();
@@ -273,39 +263,39 @@ class _SettingsStartAppPageState extends State<SettingsStartAppPage> {
     );
   }
 
-  Widget _buildSectionButtons() {
-    if (_availableSections.isEmpty) {
-      return const SizedBox.shrink(); // No muestra nada si no hay secciones
-    }
+  // Widget _buildSectionButtons() {
+  //   if (_availableSections.isEmpty) {
+  //     return const SizedBox.shrink(); // No muestra nada si no hay secciones
+  //   }
 
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children:
-            _availableSections.map((section) {
-              final isSelected = section == _selectedSection;
-              return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor:
-                        isSelected ? Colors.blue : Colors.grey[300],
-                    foregroundColor: isSelected ? Colors.white : Colors.black,
-                  ),
-                  onPressed: () {
-                    setState(() {
-                      _selectedSection = section;
-                      _footerMessage =
-                          'Sección Seleccionada: $_selectedSection';
-                    });
-                  },
-                  child: Text(section),
-                ),
-              );
-            }).toList(),
-      ),
-    );
-  }
+  //   return SingleChildScrollView(
+  //     scrollDirection: Axis.horizontal,
+  //     child: Row(
+  //       children:
+  //           _availableSections.map((section) {
+  //             final isSelected = section == _selectedSection;
+  //             return Padding(
+  //               padding: const EdgeInsets.symmetric(horizontal: 4),
+  //               child: ElevatedButton(
+  //                 style: ElevatedButton.styleFrom(
+  //                   backgroundColor:
+  //                       isSelected ? Colors.blue : Colors.grey[300],
+  //                   foregroundColor: isSelected ? Colors.white : Colors.black,
+  //                 ),
+  //                 onPressed: () {
+  //                   setState(() {
+  //                     _selectedSection = section;
+  //                     _footerMessage =
+  //                         'Sección Seleccionada: $_selectedSection';
+  //                   });
+  //                 },
+  //                 child: Text(section),
+  //               ),
+  //             );
+  //           }).toList(),
+  //     ),
+  //   );
+  // }
 
   // Función auxiliar para crear icon buttons con tooltip
   Widget _buildIconButton({
@@ -336,6 +326,18 @@ class _SettingsStartAppPageState extends State<SettingsStartAppPage> {
     return Row(
       children: [
         // KPICountsWidget(),
+        _buildIconButton(
+          tooltip: "Ir Pagina Captura Tarjetas de Ruta",
+          icon: Icons.barcode_reader,
+          onPressed: () async {
+            _footerMessage =
+                "Actualizando datos (Supervisores, Operadores, etc.)";
+            final location = GoRouterState.of(context).matchedLocation;
+            if (location != '/prodtime') {
+              context.push('/prodtime');
+            }
+          },
+        ),
         _buildIconButton(
           tooltip: "Actualizar datos (Supervisores, Operadores, etc.)",
           icon: Icons.manage_accounts,
@@ -370,6 +372,12 @@ class _SettingsStartAppPageState extends State<SettingsStartAppPage> {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('Exportando tarjetas de ruta...')),
             );
+            await Future.wait([
+              Provider.of<RouteCardProvider>(
+                context,
+                listen: false,
+              ).exportReadsAsJson(),
+            ]);
           },
         ),
         _buildIconButton(

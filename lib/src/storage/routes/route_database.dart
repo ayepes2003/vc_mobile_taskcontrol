@@ -293,8 +293,37 @@ class RouteDatabase {
     return 0;
   }
 
+  // Insertar nueva lectura en route_card_reads y devolver el ID insertado
+  Future<int> insertRead(Map<String, dynamic> readData) async {
+    final db = await database;
+    final id = await db.insert(
+      'route_card_reads',
+      readData,
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+    return id; // Retorna el id insertado
+  }
+
+  /// Consulta un registro en la tabla "route_card_reads" por su id
+  /// Retorna un Map con los campos si lo encuentra, o null si no existe
+  Future<Map<String, dynamic>?> getReadById(int id) async {
+    final db = await database;
+    final results = await db.query(
+      'route_card_reads',
+      where: 'id = ?',
+      whereArgs: [id],
+      limit: 1,
+    );
+
+    if (results.isNotEmpty) {
+      return results.first;
+    } else {
+      return null;
+    }
+  }
+
   // Insertar nueva lectura en route_card_reads
-  Future<void> insertRead(Map<String, dynamic> readData) async {
+  Future<void> insertReadLast(Map<String, dynamic> readData) async {
     final db = await database;
     await db.insert(
       'route_card_reads',
@@ -358,7 +387,28 @@ class RouteDatabase {
 
   Future<List<Map<String, dynamic>>> getAllReadsAsMap() async {
     final db = await database;
-    return await db.query('route_card_reads'); // devuelve todos los registros
+    return await db.query('route_card_reads');
+  }
+
+  // Actualiza el estado de sincronización (2=enviado, 3=pendiente)
+  Future<int> updateSyncStatus(int id, int status) async {
+    final db = await database;
+    return await db.update(
+      'route_card_reads',
+      {'status_id': status},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  // Obtiene registros con estado pendiente (status_id = 3)
+  Future<List<Map<String, dynamic>>> getPendingReads() async {
+    final db = await database;
+    return await db.query(
+      'route_card_reads',
+      where: 'status_id = ?',
+      whereArgs: [3],
+    );
   }
 
   // Borrar todas las lecturas (opcional)
