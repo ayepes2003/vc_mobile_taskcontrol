@@ -26,6 +26,7 @@ class RouteCardProvider with ChangeNotifier {
 
   // Estado y data
   List<RouteCard> _routes = [];
+  List<RouteCard> _route = [];
   List<RouteInitialData> _routesInitial = [];
   List<RouteCardRead> _recentReads = [];
   bool _isLoading = false;
@@ -158,6 +159,44 @@ class RouteCardProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  Future<RouteCard?> findSectionAndCodeRouteFromApi({
+    required String sectionName,
+    required String codeProces,
+  }) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      final response = await dioService.getRequest(
+        '/route-section-code?section_name=$sectionName&code_proces=$codeProces',
+      );
+      print(
+        'Solicitud: $sectionName, code: $codeProces, url: ${dioService.dio.options.baseUrl}',
+      );
+
+      final jsonData = response['data']['data'];
+      if (jsonData == null) {
+        lastError = 'No se encontró registro.';
+        _route = [];
+        return null;
+      }
+      final route = RouteCard.fromJson(jsonData);
+
+      // Opcional: guarda en SQLite aquí
+      await routeDatabase.insertOrUpdateRouteCard(route);
+
+      _route = [route];
+      lastError = null;
+      return route;
+    } catch (e) {
+      lastError = 'Error al cargar ruta: $e';
+      _route = [];
+      return null;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
   Future<String> exportReadsAsJson() async {
     final readsAsMap = await routeDatabase.getAllReadsAsMap();
     return jsonEncode(readsAsMap);
@@ -166,6 +205,7 @@ class RouteCardProvider with ChangeNotifier {
   Future<void> loadRoutesFromLocal() async {
     try {
       final localRoutes = await routeDatabase.getAllRouteCards();
+
       _routes = localRoutes;
       notifyListeners();
     } catch (e) {
@@ -356,6 +396,7 @@ class RouteCardProvider with ChangeNotifier {
 
   RouteCard? findByCodeProcesAndSectionId(String code, int selectedSectionId) {
     final buscado = limpiar(code);
+    routeDatabase.debugBuscaPorCodeProces(buscado);
     for (final rc in _routes) {
       if (limpiar(rc.codeProces) == buscado &&
           int.tryParse(rc.sectionId) == selectedSectionId) {
@@ -365,9 +406,53 @@ class RouteCardProvider with ChangeNotifier {
         return rc;
       }
     }
+
     print(
       'No match found for code "$code" with sectionId $selectedSectionId after cleaning',
     );
+    return null;
+  }
+
+  Future<RouteCard?> searchByCodeProcesAndSectionId(
+    String code,
+    int selectedSectionId,
+    String SectionName,
+  ) async {
+    final buscado = limpiar(code);
+
+    // // 1. Buscar en memoria (método ya existente)
+    // final resultadoMemoria = findByCodeProcesAndSectionId(
+    //   buscado,
+    //   selectedSectionId,
+    // );
+    // if (resultadoMemoria != null) {
+    //   print('Match found in MEMORY');
+    //   return resultadoMemoria;
+    // }
+
+    // 2. Buscar en SQLite local
+    final resultadoSQLite = await routeDatabase.getRouteCardByCodeProces(
+      buscado,
+    );
+    if (resultadoSQLite != null &&
+        int.tryParse(resultadoSQLite.sectionId) == selectedSectionId) {
+      print('Match found in SQLITE');
+      return resultadoSQLite;
+    }
+
+    // 3. Buscar en backend usando el endpoint REST
+    print('No match found in memory nor SQLite, fetching from API...');
+    final route = await findSectionAndCodeRouteFromApi(
+      sectionName: SectionName,
+      codeProces: buscado,
+    );
+    if (route != null) {
+      print('Match found in BACKEND/API');
+      // Ya fue insertado en SQLite en la función findSectionAndCodeRouteFromApi, si seguiste la recomendación anterior
+      return route;
+    }
+
+    print('Route not found in any layer');
     return null;
   }
 

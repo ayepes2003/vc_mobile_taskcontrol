@@ -58,9 +58,13 @@ class _PiecesStepWidgetState extends State<PiecesStepWidget> {
         routeDataProvider.selectedSectionId ??
         AppPreferences.getSectionId() ??
         0;
-    final resultado = provider.findByCodeProcesAndSectionId(
+    final selectedSectionName =
+        routeDataProvider.section ?? AppPreferences.getSection() ?? '';
+
+    final resultado = await provider.searchByCodeProcesAndSectionId(
       code.trim(),
       selectedSectionId,
+      selectedSectionName,
     );
 
     setState(() {
@@ -72,7 +76,7 @@ class _PiecesStepWidgetState extends State<PiecesStepWidget> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'No se encontró registro con ese código en la sección seleccionada.',
+            'No se encontró registro con ese código en la sección seleccionada. (Memory,Sqlite,Api)',
           ),
         ),
       );

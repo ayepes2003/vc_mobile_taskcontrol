@@ -130,7 +130,7 @@ class RouteDatabase {
     await db.insert(
       'route_cards',
       card.toMap(forInsert: true),
-      // conflictAlgorithm: ConflictAlgorithm.replace,
+      conflictAlgorithm: ConflictAlgorithm.replace,
     );
   }
 
@@ -435,5 +435,24 @@ class RouteDatabase {
   Future<void> close() async {
     final db = await database;
     await db.close();
+  }
+
+  Future<Map<String, dynamic>?> debugBuscaPorCodeProces(
+    String codeProces,
+  ) async {
+    final db = await database;
+    final results = await db.query(
+      'route_cards',
+      where: 'code_proces = ?',
+      whereArgs: [codeProces],
+      limit: 1,
+    );
+    if (results.isNotEmpty) {
+      print('DEBUG RESULT: ${results.first}');
+      return results.first;
+    } else {
+      print('DEBUG: No existe $codeProces en base local.');
+      return null;
+    }
   }
 }
