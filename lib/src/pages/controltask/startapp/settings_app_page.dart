@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:vc_taskcontrol/src/models/routescard/route_card_read.dart';
 import 'package:vc_taskcontrol/src/pages/controltask/widgets/kpi_total/kpi_count_card.dart';
@@ -9,6 +10,7 @@ import 'package:vc_taskcontrol/src/providers/app/routercard/operators_provider.d
 import 'package:vc_taskcontrol/src/providers/app/routercard/route_data_provider.dart';
 import 'package:vc_taskcontrol/src/providers/app/routercard/sections_provider.dart';
 import 'package:vc_taskcontrol/src/providers/app/routercard/supervisors_provider.dart';
+import 'package:vc_taskcontrol/src/storage/preferences/app_preferences.dart';
 import 'package:vc_taskcontrol/src/storage/preferences/general_preferences.dart';
 import 'package:vc_taskcontrol/src/providers/app/routercard/router_card_provider.dart';
 import 'package:vc_taskcontrol/src/services/connection_provider.dart';
@@ -25,6 +27,9 @@ class SettingsStartAppPage extends StatefulWidget {
 
 class _SettingsStartAppPageState extends State<SettingsStartAppPage> {
   String _footerMessage = 'Estado: listo';
+  String? _selectedSection;
+  List<String> _availableSections =
+      []; // Lista dummy o viene del provider/preferences
 
   @override
   void initState() {
@@ -34,9 +39,20 @@ class _SettingsStartAppPageState extends State<SettingsStartAppPage> {
       DeviceOrientation.landscapeRight,
     ]);
     Future.microtask(() async {
+      final routeProvider = Provider.of<RouteDataProvider>(
+        context,
+        listen: false,
+      );
       final provider = Provider.of<RouteCardProvider>(context, listen: false);
       provider.loadRoutesFromLocal();
       await provider.loadRecentReads();
+
+      final providerSection = routeProvider.section;
+      final prefsSection = await AppPreferences.getSection();
+      setState(() {
+        _footerMessage =
+            'Sección Provider: $providerSection | Sección Pref: $prefsSection Enviada : ${provider.currentLoadingSection ?? "ninguna"}';
+      });
     });
   }
 
@@ -45,14 +61,14 @@ class _SettingsStartAppPageState extends State<SettingsStartAppPage> {
     super.dispose();
   }
 
-  Future<void> _handleLoadAllRoutes() async {
-    await Future.wait([
-      Provider.of<RouteCardProvider>(
-        context,
-        listen: false,
-      ).loadRoutesFromApi(),
-    ]);
-  }
+  // Future<void> _handleLoadAllRoutes() async {
+  //   await Future.wait([
+  //     Provider.of<RouteCardProvider>(
+  //       context,
+  //       listen: false,
+  //     ).loadRoutesFromApi(),
+  //   ]);
+  // }
 
   Future<void> _handleDeleteAllRoutes() async {
     await RouteDatabase().clearAllRouteCards();
@@ -118,6 +134,7 @@ class _SettingsStartAppPageState extends State<SettingsStartAppPage> {
   Widget build(BuildContext context) {
     final isConnected = Provider.of<ConnectionProvider>(context).isConnected;
     final provider = Provider.of<RouteCardProvider>(context);
+
     // if (provider.isLoading) {
     //   return Center(
     //     child: Column(
@@ -174,12 +191,16 @@ class _SettingsStartAppPageState extends State<SettingsStartAppPage> {
                   child:
                       provider.recentReadsLimited.isEmpty
                           ? Center(
-                            child: Text(
-                              'No hay registros de Tarjetas de Ruta Leidas.',
-                              style: TextStyle(
-                                fontSize: 18,
-                                color: Colors.grey,
-                              ),
+                            child: Column(
+                              children: [
+                                Text(
+                                  'No hay registros de Tarjetas de Ruta Leidas.',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                              ],
                             ),
                           )
                           : SingleChildScrollView(
@@ -242,6 +263,40 @@ class _SettingsStartAppPageState extends State<SettingsStartAppPage> {
     );
   }
 
+  // Widget _buildSectionButtons() {
+  //   if (_availableSections.isEmpty) {
+  //     return const SizedBox.shrink(); // No muestra nada si no hay secciones
+  //   }
+
+  //   return SingleChildScrollView(
+  //     scrollDirection: Axis.horizontal,
+  //     child: Row(
+  //       children:
+  //           _availableSections.map((section) {
+  //             final isSelected = section == _selectedSection;
+  //             return Padding(
+  //               padding: const EdgeInsets.symmetric(horizontal: 4),
+  //               child: ElevatedButton(
+  //                 style: ElevatedButton.styleFrom(
+  //                   backgroundColor:
+  //                       isSelected ? Colors.blue : Colors.grey[300],
+  //                   foregroundColor: isSelected ? Colors.white : Colors.black,
+  //                 ),
+  //                 onPressed: () {
+  //                   setState(() {
+  //                     _selectedSection = section;
+  //                     _footerMessage =
+  //                         'Sección Seleccionada: $_selectedSection';
+  //                   });
+  //                 },
+  //                 child: Text(section),
+  //               ),
+  //             );
+  //           }).toList(),
+  //     ),
+  //   );
+  // }
+
   // Función auxiliar para crear icon buttons con tooltip
   Widget _buildIconButton({
     required String tooltip,
@@ -272,19 +327,42 @@ class _SettingsStartAppPageState extends State<SettingsStartAppPage> {
       children: [
         // KPICountsWidget(),
         _buildIconButton(
+          tooltip: "Ir Pagina Captura Tarjetas de Ruta",
+          icon: Icons.barcode_reader,
+          onPressed: () async {
+            _footerMessage =
+                "Actualizando datos (Supervisores, Operadores, etc.)";
+            final location = GoRouterState.of(context).matchedLocation;
+            if (location != '/prodtime') {
+              context.push('/prodtime');
+            }
+          },
+        ),
+        _buildIconButton(
           tooltip: "Actualizar datos (Supervisores, Operadores, etc.)",
           icon: Icons.manage_accounts,
           onPressed: () async {
             _footerMessage =
                 "Actualizando datos (Supervisores, Operadores, etc.)";
             _handleDataRefresh(context);
+            setState(() {});
           },
         ),
         _buildIconButton(
-          tooltip: "Descargar todas las tarjetas rutas por seccion",
+          tooltip: "Cargar todas las tarjetas rutas por seccion",
           icon: Icons.download_for_offline,
           onPressed: () async {
-            _handleLoadAllRoutes();
+            final sectionName = AppPreferences.getSection();
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('$sectionName: Cargando rutas...')),
+            );
+            await Future.wait([
+              Provider.of<RouteCardProvider>(
+                context,
+                listen: false,
+              ).loadRoutesFromApi(sectionName: sectionName),
+            ]);
+            // _handleLoadAllRoutes();
           },
         ),
         _buildIconButton(
@@ -294,6 +372,12 @@ class _SettingsStartAppPageState extends State<SettingsStartAppPage> {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('Exportando tarjetas de ruta...')),
             );
+            await Future.wait([
+              Provider.of<RouteCardProvider>(
+                context,
+                listen: false,
+              ).exportReadsAsJson(),
+            ]);
           },
         ),
         _buildIconButton(
@@ -325,7 +409,6 @@ class _SettingsStartAppPageState extends State<SettingsStartAppPage> {
           icon: Icons.delete_sweep,
           onPressed: () async {
             await _handleDeleteAllRoutes();
-            await _handleRefresh(context);
 
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('Se eliminaron todos los datos')),

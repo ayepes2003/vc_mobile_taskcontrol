@@ -75,9 +75,32 @@ class CustomDrawerMenu extends StatelessWidget {
               style: TextStyle(color: theme.colorScheme.onSurface),
             ),
             onTap: () {
-              Navigator.pop(context);
+              Navigator.pop(context); // Cierra el Drawer
+
+              showDialog(
+                context: context,
+                builder:
+                    (context) => AlertDialog(
+                      title: const Text('Información de la versión'),
+                      content: const Text(
+                        'Fecha de Version: 29/08/2025\n'
+                        'Desarrollador: ayepes2003@yahoo.es\n'
+                        'Versión: Search Memory, Sqlite, Api\n'
+                        'Versión: 1.0.10'
+                        'Branch: developerJaym',
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed:
+                              () => Navigator.pop(context), // Cierra el dialog
+                          child: const Text('Cerrar'),
+                        ),
+                      ],
+                    ),
+              );
             },
           ),
+
           const Divider(),
           ListTile(
             leading: Icon(Icons.logout, color: theme.colorScheme.error),

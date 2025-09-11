@@ -5,6 +5,9 @@ import 'package:vc_taskcontrol/src/models/routescard/route_card.dart';
 import 'package:vc_taskcontrol/src/models/routescard/route_card_read.dart';
 import 'package:vc_taskcontrol/src/models/routescard/route_initial_data.dart';
 
+// await db.execute('''
+//     DROP TABLE IF EXISTS route_card_reads;
+//   ''');
 class RouteDatabase {
   static final RouteDatabase _instance = RouteDatabase._internal();
   factory RouteDatabase() => _instance;
@@ -91,10 +94,6 @@ class RouteDatabase {
         )
       ''');
 
-    await db.execute('''
-      DROP TABLE IF EXISTS route_card_reads;
-    ''');
-
     // Tabla route_card_reads para registros de lectura/scan de rutas
     await db.execute('''
       CREATE TABLE IF NOT EXISTS route_card_reads (
@@ -131,7 +130,7 @@ class RouteDatabase {
     await db.insert(
       'route_cards',
       card.toMap(forInsert: true),
-      // conflictAlgorithm: ConflictAlgorithm.replace,
+      conflictAlgorithm: ConflictAlgorithm.replace,
     );
   }
 
@@ -294,8 +293,37 @@ class RouteDatabase {
     return 0;
   }
 
+  // Insertar nueva lectura en route_card_reads y devolver el ID insertado
+  Future<int> insertRead(Map<String, dynamic> readData) async {
+    final db = await database;
+    final id = await db.insert(
+      'route_card_reads',
+      readData,
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+    return id; // Retorna el id insertado
+  }
+
+  /// Consulta un registro en la tabla "route_card_reads" por su id
+  /// Retorna un Map con los campos si lo encuentra, o null si no existe
+  Future<Map<String, dynamic>?> getReadById(int id) async {
+    final db = await database;
+    final results = await db.query(
+      'route_card_reads',
+      where: 'id = ?',
+      whereArgs: [id],
+      limit: 1,
+    );
+
+    if (results.isNotEmpty) {
+      return results.first;
+    } else {
+      return null;
+    }
+  }
+
   // Insertar nueva lectura en route_card_reads
-  Future<void> insertRead(Map<String, dynamic> readData) async {
+  Future<void> insertReadLast(Map<String, dynamic> readData) async {
     final db = await database;
     await db.insert(
       'route_card_reads',
@@ -359,7 +387,28 @@ class RouteDatabase {
 
   Future<List<Map<String, dynamic>>> getAllReadsAsMap() async {
     final db = await database;
-    return await db.query('route_card_reads'); // devuelve todos los registros
+    return await db.query('route_card_reads');
+  }
+
+  // Actualiza el estado de sincronización (2=enviado, 3=pendiente)
+  Future<int> updateSyncStatus(int id, int status) async {
+    final db = await database;
+    return await db.update(
+      'route_card_reads',
+      {'status_id': status},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  // Obtiene registros con estado pendiente (status_id = 3)
+  Future<List<Map<String, dynamic>>> getPendingReads() async {
+    final db = await database;
+    return await db.query(
+      'route_card_reads',
+      where: 'status_id = ?',
+      whereArgs: [3],
+    );
   }
 
   // Borrar todas las lecturas (opcional)
@@ -372,6 +421,7 @@ class RouteDatabase {
   Future<void> clearAllRouteCards() async {
     final db = await database;
     await db.delete('route_cards');
+    await db.delete('route_initial_data');
   }
 
   Future<void> clearAllData() async {
@@ -385,5 +435,24 @@ class RouteDatabase {
   Future<void> close() async {
     final db = await database;
     await db.close();
+  }
+
+  Future<Map<String, dynamic>?> debugBuscaPorCodeProces(
+    String codeProces,
+  ) async {
+    final db = await database;
+    final results = await db.query(
+      'route_cards',
+      where: 'code_proces = ?',
+      whereArgs: [codeProces],
+      limit: 1,
+    );
+    if (results.isNotEmpty) {
+      print('DEBUG RESULT: ${results.first}');
+      return results.first;
+    } else {
+      print('DEBUG: No existe $codeProces en base local.');
+      return null;
+    }
   }
 }

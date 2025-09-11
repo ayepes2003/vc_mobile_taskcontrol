@@ -10,18 +10,18 @@ import 'package:vc_taskcontrol/src/models/stepconfig.dart';
 // import 'package:vc_taskcontrol/src/models/supervisor.dart' show Supervisor;
 import 'package:vc_taskcontrol/src/pages/controltask/widgets/central_content.dart';
 import 'package:vc_taskcontrol/src/pages/controltask/widgets/menus/side_menu_widget.dart';
-import 'package:vc_taskcontrol/src/providers/app/routercard/hour_ranges_provider.dart';
-import 'package:vc_taskcontrol/src/providers/app/routercard/operators_provider.dart';
-import 'package:vc_taskcontrol/src/providers/app/routercard/sections_provider.dart';
+// import 'package:vc_taskcontrol/src/providers/app/routercard/hour_ranges_provider.dart';
+// import 'package:vc_taskcontrol/src/providers/app/routercard/operators_provider.dart';
+// import 'package:vc_taskcontrol/src/providers/app/routercard/sections_provider.dart';
 import 'package:vc_taskcontrol/src/providers/app/routercard/steps_provider.dart';
-import 'package:vc_taskcontrol/src/providers/app/routercard/supervisors_provider.dart';
+// import 'package:vc_taskcontrol/src/providers/app/routercard/supervisors_provider.dart';
 import 'package:vc_taskcontrol/src/providers/app/routercard/mock_data_provider.dart';
 import 'package:vc_taskcontrol/src/providers/app/routercard/route_data_provider.dart';
 import 'package:vc_taskcontrol/src/providers/app/routercard/router_card_provider.dart';
 import 'package:vc_taskcontrol/src/services/connection_provider.dart';
 import 'package:vc_taskcontrol/src/storage/preferences/app_preferences.dart';
 import 'package:vc_taskcontrol/src/storage/preferences/general_preferences.dart';
-import 'package:vc_taskcontrol/src/storage/routes/route_database.dart';
+// import 'package:vc_taskcontrol/src/storage/routes/route_database.dart';
 import 'package:vc_taskcontrol/src/widgets/custom_app_bar.dart';
 import 'widgets/widgets_page.dart';
 
@@ -67,10 +67,10 @@ class _ControltaskBasePageState extends State<ControltaskBasePage> {
       final savedSection = await AppPreferences.getSection(); // String
       final savedSubsection = await AppPreferences.getSubsection(); // String
 
-      Provider.of<RouteCardProvider>(
-        context,
-        listen: false,
-      ).loadRoutesFromApi(sectionName: savedSection);
+      // Provider.of<RouteCardProvider>(
+      //   context,
+      //   listen: false,
+      // ).loadRoutesFromApi(sectionName: savedSection);
 
       final routeProvider = Provider.of<RouteDataProvider>(
         context,
@@ -128,44 +128,6 @@ class _ControltaskBasePageState extends State<ControltaskBasePage> {
       //   ).loadInitialRoutesFromApi(),
     ]);
   }
-
-  // Future<void> _handleRefresh(BuildContext context) async {
-  //   // Provider.of<RouteDataProvider>(context, listen: false).clear();
-  //   await RouteDatabase().clearAllReads();
-  //   Provider.of<SupervisorsProvider>(
-  //     context,
-  //     listen: false,
-  //   ).loadSupervisorsFromApi();
-  //   //hora hora
-  //   Provider.of<HourRangesProvider>(
-  //     context,
-  //     listen: false,
-  //   ).loadHourRangesFromApi();
-
-  //   Provider.of<SectionsProvider>(context, listen: false).loadSectionsFromApi();
-  //   Provider.of<OperatorsProvider>(
-  //     context,
-  //     listen: false,
-  //   ).loadOperatorsFromApi();
-
-  //   // rutas
-  //   await loadAllRoutes();
-
-  //   await Provider.of<RouteCardProvider>(
-  //     context,
-  //     listen: false,
-  //   ).loadRoutesFromLocal();
-
-  //   await Provider.of<RouteCardProvider>(
-  //     context,
-  //     listen: false,
-  //   ).loadRecentReads();
-  //   ScaffoldMessenger.of(context).showSnackBar(
-  //     const SnackBar(
-  //       content: Text('Actualizando datos servidor y limpiando sesión'),
-  //     ),
-  //   );
-  // }
 
   @override
   Widget build(BuildContext context) {
@@ -253,11 +215,11 @@ class _ControltaskBasePageState extends State<ControltaskBasePage> {
                         listen: false,
                       );
 
-                      routeProvider.setSelectedSection(section);
-                      routeProvider.setSection(section.sectionName);
-
                       await AppPreferences.setSection(section.sectionName);
                       await AppPreferences.setSectionId(section.id);
+
+                      routeProvider.setSelectedSection(section);
+                      routeProvider.setSection(section.sectionName);
 
                       setState(() {
                         selectionStep = steps.indexWhere(
@@ -337,3 +299,42 @@ class _ControltaskBasePageState extends State<ControltaskBasePage> {
     );
   }
 }
+
+
+// Future<void> _handleRefresh(BuildContext context) async {
+  //   // Provider.of<RouteDataProvider>(context, listen: false).clear();
+  //   await RouteDatabase().clearAllReads();
+  //   Provider.of<SupervisorsProvider>(
+  //     context,
+  //     listen: false,
+  //   ).loadSupervisorsFromApi();
+  //   //hora hora
+  //   Provider.of<HourRangesProvider>(
+  //     context,
+  //     listen: false,
+  //   ).loadHourRangesFromApi();
+
+  //   Provider.of<SectionsProvider>(context, listen: false).loadSectionsFromApi();
+  //   Provider.of<OperatorsProvider>(
+  //     context,
+  //     listen: false,
+  //   ).loadOperatorsFromApi();
+
+  //   // rutas
+  //   await loadAllRoutes();
+
+  //   await Provider.of<RouteCardProvider>(
+  //     context,
+  //     listen: false,
+  //   ).loadRoutesFromLocal();
+
+  //   await Provider.of<RouteCardProvider>(
+  //     context,
+  //     listen: false,
+  //   ).loadRecentReads();
+  //   ScaffoldMessenger.of(context).showSnackBar(
+  //     const SnackBar(
+  //       content: Text('Actualizando datos servidor y limpiando sesión'),
+  //     ),
+  //   );
+  // }

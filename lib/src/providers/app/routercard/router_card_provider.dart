@@ -26,11 +26,14 @@ class RouteCardProvider with ChangeNotifier {
 
   // Estado y data
   List<RouteCard> _routes = [];
+  List<RouteCard> _route = [];
   List<RouteInitialData> _routesInitial = [];
   List<RouteCardRead> _recentReads = [];
   bool _isLoading = false;
   String? lastError;
 
+  String? _currentLoadingSection;
+  String? get currentLoadingSection => _currentLoadingSection;
   // Accesores para UI
   List<RouteCard> get routes => List.unmodifiable(_routes);
   List<RouteInitialData> get routesInitial => List.unmodifiable(_routesInitial);
@@ -121,8 +124,8 @@ class RouteCardProvider with ChangeNotifier {
 
   Future<void> loadRoutesFromApi({String? sectionName}) async {
     _isLoading = true;
-    notifyListeners();
-    final sectionName = AppPreferences.getSection();
+    // final sectionName = AppPreferences.getSection();
+    print('Cargando rutas desde API para sección: $sectionName');
     try {
       final response = await dioService.getRequest(
         '/route-cards-active?section_name=$sectionName',
@@ -143,12 +146,8 @@ class RouteCardProvider with ChangeNotifier {
       for (var route in dataList) {
         if (!localCodeProcesSet.contains(route.codeProces)) {
           await routeDatabase.insertOrUpdateRouteCard(route);
-        } else {
-          // Opcional: aquí también podrías comparar statusId para actualizar si cambió
-          // Por ahora omitimos para optimizar tiempo
-        }
+        } else {}
       }
-
       _routes = dataList;
       lastError = null;
     } catch (e) {
@@ -156,9 +155,46 @@ class RouteCardProvider with ChangeNotifier {
       // print(e);
       _routes = [];
     }
-
     _isLoading = false;
     notifyListeners();
+  }
+
+  Future<RouteCard?> findSectionAndCodeRouteFromApi({
+    required String sectionName,
+    required String codeProces,
+  }) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      final response = await dioService.getRequest(
+        '/route-section-code?section_name=$sectionName&code_proces=$codeProces',
+      );
+      print(
+        'Solicitud: $sectionName, code: $codeProces, url: ${dioService.dio.options.baseUrl}',
+      );
+
+      final jsonData = response['data']['data'];
+      if (jsonData == null) {
+        lastError = 'No se encontró registro.';
+        _route = [];
+        return null;
+      }
+      final route = RouteCard.fromJson(jsonData);
+
+      // Opcional: guarda en SQLite aquí
+      await routeDatabase.insertOrUpdateRouteCard(route);
+
+      _route = [route];
+      lastError = null;
+      return route;
+    } catch (e) {
+      lastError = 'Error al cargar ruta: $e';
+      _route = [];
+      return null;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 
   Future<String> exportReadsAsJson() async {
@@ -169,6 +205,7 @@ class RouteCardProvider with ChangeNotifier {
   Future<void> loadRoutesFromLocal() async {
     try {
       final localRoutes = await routeDatabase.getAllRouteCards();
+
       _routes = localRoutes;
       notifyListeners();
     } catch (e) {
@@ -198,8 +235,100 @@ class RouteCardProvider with ChangeNotifier {
     await loadRoutesFromLocal();
   }
 
-  /// Agrega una lectura local (guardado en SQLite) y recarga lecturas
   Future<void> addReadLocal(RouteCard card, int enteredQuantity) async {
+    final routeCardId = await routeDatabase.getRouteCardIdByCodeProces(
+      card.codeProces,
+    );
+
+    if (routeCardId == null) {
+      throw Exception(
+        'RouteCard no encontrado en la base local para guardar la lectura.',
+      );
+    }
+
+    final int totalRegistered = await routeDatabase.getTotalRegisteredQuantity(
+      card.codeProces,
+    );
+    final int initialQuantity = int.tryParse(card.initialQuantity) ?? 0;
+    final int difference =
+        initialQuantity - (totalRegistered + enteredQuantity);
+
+    // Construir el mapa con los datos completos de la lectura
+    final Map<String, dynamic> readData = {
+      'route_card_id': routeCardId,
+      'code_proces': card.codeProces,
+      'entered_quantity': enteredQuantity,
+      'difference': difference,
+      'read_at': DateTime.now().toIso8601String(),
+      'device_id': 'tabletDev',
+      'status_id': 3, // 3 significa pendiente para sincronización inicial
+      'sync_attempts': 0,
+      'supervisor': routeDataProvider.supervisor,
+      'selected_hour_range': routeDataProvider.selectedHourRange,
+      'section': routeDataProvider.section,
+      'subsection': routeDataProvider.subsection,
+      'operator': routeDataProvider.operatorName,
+      'supervisory_id': routeDataProvider.selectedSupervisorId,
+      'section_id': routeDataProvider.selectedSectionId,
+      'subsection_id': routeDataProvider.selectedSubsectionId,
+      'operator_id': routeDataProvider.selectedOperatorId,
+      'accum_diff': null,
+    };
+
+    // Insertar lectura en SQLite y obtener el id generado
+    final int newReadId = await routeDatabase.insertRead(readData);
+
+    // Recargar lecturas recientes (tu función original)
+    await loadRecentReads();
+
+    // Cargar registro recién insertado para enviar
+    final Map<String, dynamic>? newRecord = await routeDatabase.getReadById(
+      newReadId,
+    );
+
+    if (newRecord != null) {
+      // Intentar enviar al backend
+      final bool success = await sendSingleRead(newRecord);
+
+      if (success) {
+        // Marcar sincronizado si la llamada fue exitosa
+        await routeDatabase.updateSyncStatus(newReadId, 2);
+      } else {
+        // Si falla, mantener como pendiente (3)
+        await routeDatabase.updateSyncStatus(newReadId, 3);
+      }
+    }
+
+    // Notificar cambios a la UI si usas provider o algo similar
+    notifyListeners();
+  }
+
+  /// Función para enviar un solo registro al backend y manejar posibles errores
+
+  Future<bool> sendSingleRead(Map<String, dynamic> record) async {
+    try {
+      final response = await dioService.dio.post('/card-reads', data: record);
+      if (response.statusCode == 200) {
+        await routeDatabase.updateSyncStatus(
+          record['id'],
+          2,
+        ); // marcado como enviado
+        return true;
+      } else {
+        await routeDatabase.updateSyncStatus(
+          record['id'],
+          3,
+        ); // pendiente/reintento
+        return false;
+      }
+    } catch (e) {
+      await routeDatabase.updateSyncStatus(record['id'], 3);
+      return false;
+    }
+  }
+
+  /// Agrega una lectura local (guardado en SQLite) y recarga lecturas
+  Future<void> addReadLocalBuena(RouteCard card, int enteredQuantity) async {
     final routeCardId = await routeDatabase.getRouteCardIdByCodeProces(
       card.codeProces,
     );
@@ -261,20 +390,13 @@ class RouteCardProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  // /// Borra todas las lecturas locales
-  // Future<void> clearAllReads() async {
-  //   final db = await routeDatabase.database;
-  //   await db.delete('route_card_reads');
-  //   _recentReads = [];
-  //   notifyListeners();
-  // }
-
   /// Método util para limpiar strings
   String limpiar(String s) =>
       s.trim().replaceAll('\r', '').replaceAll('\n', '').toLowerCase();
 
   RouteCard? findByCodeProcesAndSectionId(String code, int selectedSectionId) {
     final buscado = limpiar(code);
+    routeDatabase.debugBuscaPorCodeProces(buscado);
     for (final rc in _routes) {
       if (limpiar(rc.codeProces) == buscado &&
           int.tryParse(rc.sectionId) == selectedSectionId) {
@@ -284,9 +406,53 @@ class RouteCardProvider with ChangeNotifier {
         return rc;
       }
     }
+
     print(
       'No match found for code "$code" with sectionId $selectedSectionId after cleaning',
     );
+    return null;
+  }
+
+  Future<RouteCard?> searchByCodeProcesAndSectionId(
+    String code,
+    int selectedSectionId,
+    String SectionName,
+  ) async {
+    final buscado = limpiar(code);
+
+    // // 1. Buscar en memoria (método ya existente)
+    // final resultadoMemoria = findByCodeProcesAndSectionId(
+    //   buscado,
+    //   selectedSectionId,
+    // );
+    // if (resultadoMemoria != null) {
+    //   print('Match found in MEMORY');
+    //   return resultadoMemoria;
+    // }
+
+    // 2. Buscar en SQLite local
+    final resultadoSQLite = await routeDatabase.getRouteCardByCodeProces(
+      buscado,
+    );
+    if (resultadoSQLite != null &&
+        int.tryParse(resultadoSQLite.sectionId) == selectedSectionId) {
+      print('Match found in SQLITE');
+      return resultadoSQLite;
+    }
+
+    // 3. Buscar en backend usando el endpoint REST
+    print('No match found in memory nor SQLite, fetching from API...');
+    final route = await findSectionAndCodeRouteFromApi(
+      sectionName: SectionName,
+      codeProces: buscado,
+    );
+    if (route != null) {
+      print('Match found in BACKEND/API');
+      // Ya fue insertado en SQLite en la función findSectionAndCodeRouteFromApi, si seguiste la recomendación anterior
+      return route;
+    }
+
+    print('Route not found in any layer');
     return null;
   }
 
@@ -303,6 +469,14 @@ class RouteCardProvider with ChangeNotifier {
     }
     print('No match found after cleaning');
     return null;
+  }
+
+  Future<void> syncPendingReads() async {
+    final pendingReads = await routeDatabase.getPendingReads();
+
+    for (var read in pendingReads) {
+      await sendSingleRead(read);
+    }
   }
 
   /// Última lectura registrada (si existe)
@@ -584,3 +758,71 @@ class RouteCardProvider with ChangeNotifier {
     }
   }
 }
+
+
+// Future<void> sendReadsOneByOne() async {
+  //   try {
+  //     // Obtener el array de registros desde la base de datos
+  //     final List<Map<String, dynamic>> jsonArray =
+  //         await routeDatabase.getAllReadsAsMap();
+
+  //     for (var jsonData in jsonArray) {
+  //       final response = await dioService.dio.post(
+  //         '/card-reads',
+  //         data: jsonData,
+  //       );
+
+  //       if (response.statusCode == 200) {
+  //         print('Dato enviado y guardado correctamente: ${jsonData["id"]}');
+  //       } else {
+  //         print(
+  //           'Error al enviar dato ${jsonData["id"]}: Código ${response.statusCode}',
+  //         );
+  //       }
+  //     }
+  //   } catch (e) {
+  //     print('Error general al enviar datos: $e');
+  //   }
+  // }
+
+
+  // /// Borra todas las lecturas locales
+  // Future<void> clearAllReads() async {
+  //   final db = await routeDatabase.database;
+  //   await db.delete('route_card_reads');
+  //   _recentReads = [];
+  //   notifyListeners();
+  // }
+
+// Future<void> sendSingleReadJsonToApi() async {
+//   try {
+//     // Obtener el JSON completo (array)
+//     String jsonString = await exportReadsAsJson();
+
+//     // Decodificar a List
+//     final List<dynamic> jsonArray = jsonDecode(jsonString);
+
+//     if (jsonArray.isEmpty) {
+//       print("No hay datos para enviar");
+//       return;
+//     }
+
+//     // Tomar el primer objeto del array
+//     final Map<String, dynamic> firstObject = jsonArray[0];
+
+//     // Enviar POST con ese objeto
+//     final response = await dioService.dio.post(
+//       '/card-reads',
+//       data: firstObject,
+//     );
+
+//     if (response.statusCode == 200) {
+//       print(jsonEncode(jsonArray));
+//       print('Dato enviado y guardado correctamente');
+//     } else {
+//       print('Error en el envío: Código ${response.statusCode}');
+//     }
+//   } catch (e) {
+//     print('Error al enviar datos: $e');
+//   }
+// }

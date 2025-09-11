@@ -80,4 +80,9 @@ class AppPreferences {
     await BasePreferences.setString(operatorKey, '');
     await BasePreferences.setString(estimatedQuantityKey, '');
   }
+
+  static Future<void> clearSection() async {
+    await BasePreferences.setString(sectionKey, '');
+    await BasePreferences.setInt(sectionIdKey, 0);
+  }
 }
