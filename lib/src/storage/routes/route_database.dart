@@ -26,9 +26,9 @@ class RouteDatabase {
     final path = join(documentsDirectory, 'route_cards.db');
     return await openDatabase(
       path,
-      version: 2,
+      version: 3,
       onCreate: _onCreate,
-      // onUpgrade: _onUpgrade, // para migraciones futuras si se necesita
+      onUpgrade: _onUpgrade, // para migraciones futuras si se necesita
     );
   }
 
@@ -115,10 +115,20 @@ class RouteDatabase {
         operator_id INTEGER NULL,
         device_id TEXT,
         status_id INTEGER,
+        is_partial INTEGER DEFAULT 1,
         sync_attempts INTEGER,
         FOREIGN KEY (route_card_id) REFERENCES route_cards(id)
       )
     ''');
+  }
+
+  FutureOr<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 3) {
+      // Solo agrega el campo si no existe
+      await db.execute(
+        'ALTER TABLE route_card_reads ADD COLUMN is_partial INTEGER DEFAULT 1',
+      );
+    }
   }
 
   // Insertar o actualizar RouteCard
@@ -284,6 +294,7 @@ class RouteDatabase {
       SELECT SUM(entered_quantity) as total
       FROM route_card_reads
       WHERE code_proces = ?
+      AND is_partial = 0
       ''',
       [codeProces],
     );
@@ -351,6 +362,7 @@ class RouteDatabase {
              c.*
       FROM route_card_reads r
       LEFT JOIN route_cards c ON r.route_card_id = c.id
+      WHERE is_partial = 0
       ORDER BY r.read_at DESC
       LIMIT ?
     ''',

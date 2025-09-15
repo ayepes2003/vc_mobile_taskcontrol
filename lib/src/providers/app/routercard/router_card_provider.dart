@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:ffi';
 
 import 'package:flutter/material.dart';
 import 'package:vc_taskcontrol/src/models/routescard/route_card.dart';
@@ -235,7 +236,11 @@ class RouteCardProvider with ChangeNotifier {
     await loadRoutesFromLocal();
   }
 
-  Future<void> addReadLocal(RouteCard card, int enteredQuantity) async {
+  Future<void> addReadLocal(
+    RouteCard card,
+    int enteredQuantity,
+    bool isPartial,
+  ) async {
     final routeCardId = await routeDatabase.getRouteCardIdByCodeProces(
       card.codeProces,
     );
@@ -273,6 +278,7 @@ class RouteCardProvider with ChangeNotifier {
       'subsection_id': routeDataProvider.selectedSubsectionId,
       'operator_id': routeDataProvider.selectedOperatorId,
       'accum_diff': null,
+      'is_partial': isPartial,
     };
 
     // Insertar lectura en SQLite y obtener el id generado
@@ -377,7 +383,7 @@ class RouteCardProvider with ChangeNotifier {
   }
 
   /// Agrega lectura sólo en memoria (no persistente)
-  void addRead(RouteCard card, int enteredQuantity) {
+  void addRead(RouteCard card, int enteredQuantity, bool isPartial) {
     _recentReads.insert(
       0,
       RouteCardRead(
@@ -385,6 +391,7 @@ class RouteCardProvider with ChangeNotifier {
         section: card.sectionName,
         enteredQuantity: enteredQuantity,
         readAt: DateTime.now(),
+        isPartial: isPartial,
       ),
     );
     notifyListeners();

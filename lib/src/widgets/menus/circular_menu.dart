@@ -43,7 +43,7 @@ class _CircularMenuWidgetState extends State<CircularMenuWidget> {
       items: [
         CircularMenuItem(
           icon: Icons.home,
-          color: AppColors.primary,
+          color: AppColors.secondary,
           onTap: () {
             setState(() {
               _selectionColor = AppColors.primary;
@@ -54,10 +54,10 @@ class _CircularMenuWidgetState extends State<CircularMenuWidget> {
 
         CircularMenuItem(
           icon: Icons.barcode_reader,
-          color: AppColors.secondary,
+          color: AppColors.primary,
           onTap: () {
             setState(() {
-              _selectionColor = AppColors.secondary;
+              _selectionColor = AppColors.primary;
               _selectionLabel = 'Production Time';
               context.push('/prodtime');
             });
@@ -91,11 +91,11 @@ class _CircularMenuWidgetState extends State<CircularMenuWidget> {
         // ),
         CircularMenuItem(
           icon: Icons.app_settings_alt,
-          color: AppColors.accent,
+          color: AppColors.secondary,
           badgeLabel: 'Start App Settings',
           onTap: () {
             setState(() {
-              _selectionColor = AppColors.accent;
+              _selectionColor = AppColors.secondary;
               _selectionLabel = 'Start App Settings';
               final location = GoRouterState.of(context).matchedLocation;
               if (location != '/start_app') {
@@ -107,7 +107,7 @@ class _CircularMenuWidgetState extends State<CircularMenuWidget> {
         ),
         CircularMenuItem(
           icon: Icons.qr_code_2_sharp, // Nuevo icono reemplazando a "chat"
-          color: AppColors.primary,
+          color: AppColors.secondary,
           onTap: () {
             setState(() {
               _selectionColor = AppColors.success;
