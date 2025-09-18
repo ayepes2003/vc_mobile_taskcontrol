@@ -20,6 +20,7 @@ class RouteCardRead {
   final int? sectionId;
   final int? subsectionId;
   final int? operatorId;
+  final bool? isPartial;
 
   // Nuevo campo para diferencia acumulada
   final int? accumDiff;
@@ -42,6 +43,7 @@ class RouteCardRead {
     this.subsectionId,
     this.operatorId,
     this.accumDiff,
+    this.isPartial,
   });
 
   /// Crear instancia desde Map (ejemplo desde SQLite)
@@ -64,6 +66,7 @@ class RouteCardRead {
       subsectionId: map['subsection_id'] as int?,
       operatorId: map['operator_id'] as int?,
       accumDiff: map['accum_diff'] as int?,
+      isPartial: map['is_partial'] == 1,
     );
   }
 
@@ -86,6 +89,7 @@ class RouteCardRead {
       'subsection_id': subsectionId,
       'operator_id': operatorId,
       'accum_diff': accumDiff,
+      'is_partial': isPartial == true ? 1 : 0,
     };
 
     // Si tienes el id en card, también lo puedes incluir como clave foranea
@@ -120,6 +124,7 @@ class RouteCardRead {
       subsectionId: json['subsection_id'],
       operatorId: json['operator_id'],
       accumDiff: json['accum_diff'],
+      isPartial: json['is_partial'] == true || json['is_partial'] == 1,
     );
   }
 
@@ -144,6 +149,7 @@ class RouteCardRead {
       'accum_diff': accumDiff,
       'route_card_id': card?.id,
       'code_proces': card?.codeProces,
+      'is_partial': isPartial == true ? 1 : 0,
     };
   }
 
@@ -166,15 +172,18 @@ class RouteCardRead {
         case 'read':
           return 'Leido';
         case '2':
+          return 'Enviado ';
+        case '3':
+          return 'Pending Sync';
         case 'terminated':
-          return 'Terminado';
+          return 'Completado';
         default:
           return status!;
       }
     }
     if (card == null) return 'Pendiente';
     if (enteredQuantity == (int.tryParse(card!.quantity) ?? 0))
-      return 'Terminado';
+      return 'Completado';
     return 'Read';
   }
 }

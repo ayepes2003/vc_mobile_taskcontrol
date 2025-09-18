@@ -48,6 +48,8 @@ class _PiecesStepWidgetState extends State<PiecesStepWidget> {
   }
 
   Future<void> _onSearchSubmitted(String code) async {
+    FocusScope.of(context).unfocus();
+    await Future.delayed(const Duration(milliseconds: 100));
     final provider = Provider.of<RouteCardProvider>(context, listen: false);
     final routeDataProvider = Provider.of<RouteDataProvider>(
       context,
@@ -110,10 +112,14 @@ class _PiecesStepWidgetState extends State<PiecesStepWidget> {
         registeredQuantity,
         tolerance,
         toleranceDifference,
+        code,
       );
 
       if (cantidadStr != null && cantidadStr.isNotEmpty) {
-        int cantidad = int.tryParse(cantidadStr) ?? 0;
+        final parts = cantidadStr.split('|');
+        final cantidad = int.tryParse(parts[0]) ?? 0;
+        final isPartial = parts.length > 1 && parts[1] == 'true';
+        // int cantidad = int.tryParse(cantidadStr) ?? 0;
 
         await AppPreferences.setProject(resultado.projectName);
         await AppPreferences.setSectionId(int.parse(resultado.sectionId));
@@ -130,50 +136,68 @@ class _PiecesStepWidgetState extends State<PiecesStepWidget> {
           listen: false,
         ).setRealQuantity(cantidad);
 
-        provider.addRead(resultado, cantidad);
-
-        await provider.addReadLocal(resultado, cantidad);
+        // Send to provider memory tablet
+        provider.addRead(resultado, cantidad, isPartial);
+        // send to api server
+        await provider.addReadLocal(resultado, cantidad, isPartial);
       }
     }
   }
 
   Future<String?> showQuantityDialog(
     BuildContext context,
-    int initialQuantity, // Cantidad estimada o inicial total
-    int registeredQuantity, // Sumatoria ya registrada guardada en DB
+    int initialQuantity,
+    int registeredQuantity,
     int tolerance,
     int toleranceDifference,
+
+    String code,
   ) async {
     final controller = TextEditingController();
     final focusNode = FocusNode();
     String? errorText;
+    bool isPartial = false;
 
-    // Calculamos la diferencia (lo que falta registrar)
     final int remainingQuantity = initialQuantity - registeredQuantity;
 
     void onValidate(StateSetter setStateDialog) {
       final val = controller.text.trim();
       final parsed = int.tryParse(val);
 
-      if (val.isEmpty || parsed == null || parsed <= 0) {
-        errorText = "Ingrese un número válido mayor que cero";
-        setStateDialog(() {});
-        focusNode.requestFocus();
-      } else if (parsed > remainingQuantity) {
-        errorText =
-            "No puede ser mayor que la cantidad restante por registrar ($remainingQuantity).";
-        setStateDialog(() {});
-        focusNode.requestFocus();
+      // --- Validación modificada según el switch ---
+      if (!isPartial) {
+        // Si NO es parcial, usa las validaciones actuales
+        if (val.isEmpty || parsed == null || parsed <= 0) {
+          errorText = "Ingrese un número válido mayor que cero";
+          setStateDialog(() {});
+          focusNode.requestFocus();
+          return;
+        } else if (parsed > remainingQuantity) {
+          errorText =
+              "No puede ser mayor que la cantidad restante por registrar ($remainingQuantity).";
+          setStateDialog(() {});
+          focusNode.requestFocus();
+          return;
+        }
       } else {
-        // Entrada válida: cierra el diálogo y retorna el valor
-        Navigator.of(context).pop(val);
+        if (val.isEmpty || parsed == null || parsed <= 0) {
+          errorText = "Ingrese un número válido mayor que cero";
+          setStateDialog(() {});
+          focusNode.requestFocus();
+          return;
+        }
       }
+      // Si pasa validación, retorna el valor junto con el estado de parcialidad
+      Navigator.of(context).pop("$val|$isPartial");
     }
 
     return await showDialog<String>(
       context: context,
       barrierDismissible: false,
       builder: (BuildContext dialogContext) {
+        final theme = Theme.of(context);
+        final isDark = theme.brightness == Brightness.dark;
+
         return StatefulBuilder(
           builder: (context, setStateDialog) {
             return SafeArea(
@@ -184,100 +208,101 @@ class _PiecesStepWidgetState extends State<PiecesStepWidget> {
                   left: 24,
                   right: 24,
                 ),
-                child: AlertDialog(
-                  title: const Text('Ingrese cantidad'),
-                  content: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Cantidad inicial: $initialQuantity',
-                        style: const TextStyle(
-                          color: Colors.blueAccent,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                        ),
-                      ),
-                      Text(
-                        'Cantidad registrada: $registeredQuantity',
-                        style: const TextStyle(
-                          color: Colors.grey,
-                          fontSize: 13,
-                        ),
-                      ),
-                      Text(
-                        'Cantidad restante: $remainingQuantity',
-                        style: const TextStyle(
-                          color: Colors.orange,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      TextFormField(
-                        controller: controller,
-                        focusNode: focusNode,
-                        keyboardType: TextInputType.number,
-                        autofocus: true,
-                        decoration: InputDecoration(
-                          hintText: 'Cantidad',
-                          border: const OutlineInputBorder(),
-                          errorText: errorText,
-                          filled: true,
-                          fillColor: Colors.white,
-                          suffixIcon: Icon(Icons.numbers, color: Colors.green),
-                          focusedBorder: OutlineInputBorder(
-                            borderSide: BorderSide(
-                              color: Colors.green,
-                              width: 2.0,
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 5.0),
+                  child: SizedBox(
+                    width: 300,
+                    child: AlertDialog(
+                      title: Center(child: Text('Ingrese cantidad a reportar')),
+                      content: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Center(
+                            child: Text(
+                              'T. Ruta: $code',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                                color: theme.colorScheme.primary,
+                              ),
                             ),
-                            borderRadius: BorderRadius.circular(10.0),
                           ),
-                          enabledBorder: OutlineInputBorder(
-                            borderSide: BorderSide(
-                              color: Colors.grey,
-                              width: 1.0,
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  isPartial
+                                      ? "Proceso: Parcial"
+                                      : "Proceso: Completo",
+                                  style: TextStyle(
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.w600,
+                                    color:
+                                        isPartial ? Colors.red : Colors.green,
+                                  ),
+                                ),
+                              ),
+                              Switch(
+                                value: isPartial,
+                                onChanged: (val) {
+                                  setStateDialog(() => isPartial = val);
+                                },
+                                activeColor:
+                                    isDark ? Colors.redAccent : Colors.red,
+                                inactiveThumbColor:
+                                    isDark
+                                        ? Colors.white
+                                        : Colors
+                                            .green, // ¡Brillante en modo oscuro!
+                                inactiveTrackColor:
+                                    isDark
+                                        ? Colors.grey.shade700
+                                        : Colors.grey.shade300,
+                              ),
+                            ],
+                          ),
+
+                          const SizedBox(height: 10),
+                          QuantityWidget(
+                            remainingQuantity: remainingQuantity,
+                            initialQuantity: initialQuantity,
+                            registeredQuantity: registeredQuantity,
+                            controller: controller,
+                            focusNode: focusNode,
+                            errorText: errorText,
+                            onFieldSubmitted: () => onValidate(setStateDialog),
+                          ),
+                          if (errorText != null)
+                            Center(
+                              child: Padding(
+                                padding: const EdgeInsets.only(top: 8),
+                                child: Text(
+                                  errorText!,
+                                  style: const TextStyle(
+                                    color: Colors.red,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                              ),
                             ),
-                            borderRadius: BorderRadius.circular(10.0),
-                          ),
-                        ),
-                        inputFormatters: [
-                          FilteringTextInputFormatter.digitsOnly,
+                          const SizedBox(height: 12),
                         ],
-                        style: const TextStyle(
-                          fontSize: 22,
-                          letterSpacing: 2,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black87,
-                        ),
-                        textAlign: TextAlign.center,
-                        onFieldSubmitted: (_) {
-                          onValidate(setStateDialog);
-                        },
                       ),
-                      if (errorText != null)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 8),
-                          child: Text(
-                            errorText!,
-                            style: const TextStyle(
-                              color: Colors.red,
-                              fontSize: 13,
-                            ),
-                          ),
+                      actions: [
+                        TextButton(
+                          onPressed:
+                              () => Navigator.of(dialogContext).pop(null),
+                          child: const Text('CANCELAR'),
                         ),
-                    ],
+                        ElevatedButton(
+                          onPressed: () => onValidate(setStateDialog),
+                          child: const Text('ACEPTAR'),
+                        ),
+                      ],
+                    ),
                   ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.of(dialogContext).pop(null),
-                      child: const Text('CANCELAR'),
-                    ),
-                    ElevatedButton(
-                      onPressed: () => onValidate(setStateDialog),
-                      child: const Text('OK'),
-                    ),
-                  ],
                 ),
               ),
             );
@@ -400,7 +425,7 @@ class _PiecesStepWidgetState extends State<PiecesStepWidget> {
                 onSubmitted: (value) {
                   _onSearchSubmitted(value);
                   _searchController.clear();
-                  _searchFocusNode.requestFocus();
+                  // _searchFocusNode.requestFocus();
                 },
               ),
             ),
@@ -422,52 +447,7 @@ class _PiecesStepWidgetState extends State<PiecesStepWidget> {
               }
             },
           ),
-          // ActionButtonsPieces(
-          //   oncamarePressed: () async {
-          //     final code = await showDialog<String>(
-          //       context: context,
-          //       builder:
-          //           (context) => Dialog(
-          //             backgroundColor: Colors.black87,
-          //             shape: RoundedRectangleBorder(
-          //               borderRadius: BorderRadius.circular(20),
-          //             ),
-          //             insetPadding: const EdgeInsets.all(24),
-          //             child: SizedBox(
-          //               width: 340,
-          //               height: 420,
-          //               child: Stack(
-          //                 children: [
-          //                   ScannerWidget(
-          //                     onCodeRead:
-          //                         (code) => Navigator.of(context).pop(code),
-          //                   ),
-          //                   Positioned(
-          //                     top: 8,
-          //                     right: 8,
-          //                     child: IconButton(
-          //                       icon: Icon(
-          //                         Icons.close,
-          //                         color: Colors.white,
-          //                         size: 30,
-          //                       ),
-          //                       onPressed: () => Navigator.of(context).pop(),
-          //                       tooltip: 'Cancelar',
-          //                     ),
-          //                   ),
-          //                 ],
-          //               ),
-          //             ),
-          //           ),
-          //     );
-          //     if (code != null && code.isNotEmpty) {
-          //       // Aquí usas tu flujo normal
-          //       _onSearchSubmitted(
-          //         code,
-          //       ); // O el método que ya uses para validar/buscar y mostrar diálogo de cantidad
-          //     }
-          //   },
-          // ),
+
           const SizedBox(width: 6),
           IconButton(
             tooltip: 'Historial',
@@ -479,41 +459,101 @@ class _PiecesStepWidgetState extends State<PiecesStepWidget> {
         ],
       ),
     );
+  }
+}
 
-    // return Container(
-    //   margin: const EdgeInsets.all(6),
-    //   padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 6),
-    //   decoration: BoxDecoration(
-    //     color: Theme.of(context).colorScheme.surface,
-    //     borderRadius: BorderRadius.circular(8),
-    //   ),
-    //   child: Row(
-    //     children: [
-    //       Expanded(
-    //         child: TextField(
-    //           keyboardType: TextInputType.number,
-    //           controller: _searchController,
-    //           focusNode: _searchFocusNode,
-    //           autofocus: true,
-    //           decoration: InputDecoration(
-    //             labelText: 'Escanea o ingresa # Tarjeta de Ruta [F1]',
-    //             suffixIcon: const Icon(Icons.search),
-    //             border: OutlineInputBorder(
-    //               borderRadius: BorderRadius.circular(10),
-    //             ),
-    //           ),
-    //           onSubmitted: (value) {
-    //             _onSearchSubmitted(value);
-    //             _searchController.clear();
-    //             _searchFocusNode
-    //                 .requestFocus(); // Mantener el foco tras limpiar
-    //           },
-    //         ),
-    //       ),
-    //       const SizedBox(width: 6),
-    //       ActionButtonsPieces(oncamarePressed: widget.onCameraPressed),
-    //     ],
-    //   ),
-    // );
+class QuantityWidget extends StatelessWidget {
+  const QuantityWidget({
+    super.key,
+    required this.remainingQuantity,
+    required this.initialQuantity,
+    required this.registeredQuantity,
+    required this.controller,
+    required this.focusNode,
+    required this.errorText,
+    required this.onFieldSubmitted,
+  });
+
+  final int remainingQuantity;
+  final int initialQuantity;
+  final int registeredQuantity;
+  final TextEditingController controller;
+  final FocusNode focusNode;
+  final String? errorText;
+  final VoidCallback onFieldSubmitted;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Flexible(
+          flex: 2,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Inicial: $initialQuantity',
+                style: const TextStyle(
+                  color: Colors.blueAccent,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                ),
+              ),
+              Text(
+                'Registrada: $registeredQuantity',
+                style: const TextStyle(color: Colors.grey, fontSize: 18),
+              ),
+              Text(
+                'Restante: $remainingQuantity',
+                style: const TextStyle(
+                  color: Colors.orange,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 18,
+                ),
+              ),
+            ],
+          ),
+        ),
+        SizedBox(width: 10),
+        Flexible(
+          flex: 1,
+          child: Padding(
+            padding: const EdgeInsets.only(left: 12.0),
+            child: TextFormField(
+              controller: controller,
+              focusNode: focusNode,
+              keyboardType: TextInputType.number,
+              autofocus: true,
+              decoration: InputDecoration(
+                hintText: 'Cantidad',
+                border: const OutlineInputBorder(),
+                errorText: errorText,
+                filled: true,
+                fillColor: Colors.white,
+                suffixIcon: Icon(Icons.numbers, color: Colors.green),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.green, width: 2.0),
+                  borderRadius: BorderRadius.circular(10.0),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.grey, width: 1.0),
+                  borderRadius: BorderRadius.circular(10.0),
+                ),
+              ),
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              style: const TextStyle(
+                fontSize: 22,
+                letterSpacing: 2,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
+              textAlign: TextAlign.center,
+              onFieldSubmitted: (_) => onFieldSubmitted(),
+            ),
+          ),
+        ),
+      ],
+    );
   }
 }

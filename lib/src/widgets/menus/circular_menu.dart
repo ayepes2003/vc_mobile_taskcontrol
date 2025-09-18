@@ -24,26 +24,49 @@ class _CircularMenuWidgetState extends State<CircularMenuWidget> {
       alignment: Alignment.bottomCenter,
       toggleButtonColor: AppColors.primary,
       backgroundWidget: Center(
-        child: RichText(
-          text: TextSpan(
-            style: TextStyle(color: scheme.onSurface, fontSize: 24),
-            children: <TextSpan>[
-              TextSpan(
-                text: _selectionLabel,
-                style: TextStyle(
-                  color: _selectionColor,
-                  fontWeight: FontWeight.bold,
-                ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Center(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircleAvatar(
+                    radius: 50,
+                    backgroundImage: AssetImage('assets/images/planta.png'),
+                  ),
+                  SizedBox(width: 5),
+                  CircleAvatar(
+                    radius: 50,
+                    backgroundImage: AssetImage('assets/images/HorApp.jpg'),
+                  ),
+                ],
               ),
-              const TextSpan(text: ' opción seleccionada.'),
-            ],
-          ),
+            ),
+
+            SizedBox(height: 15),
+            RichText(
+              text: TextSpan(
+                style: TextStyle(color: scheme.onSurface, fontSize: 24),
+                children: <TextSpan>[
+                  TextSpan(
+                    text: _selectionLabel,
+                    style: TextStyle(
+                      color: _selectionColor,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const TextSpan(text: ' opción seleccionada.'),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
       items: [
         CircularMenuItem(
           icon: Icons.home,
-          color: AppColors.primary,
+          color: AppColors.secondary,
           onTap: () {
             setState(() {
               _selectionColor = AppColors.primary;
@@ -54,10 +77,10 @@ class _CircularMenuWidgetState extends State<CircularMenuWidget> {
 
         CircularMenuItem(
           icon: Icons.barcode_reader,
-          color: AppColors.secondary,
+          color: AppColors.primary,
           onTap: () {
             setState(() {
-              _selectionColor = AppColors.secondary;
+              _selectionColor = AppColors.primary;
               _selectionLabel = 'Production Time';
               context.push('/prodtime');
             });
@@ -91,11 +114,11 @@ class _CircularMenuWidgetState extends State<CircularMenuWidget> {
         // ),
         CircularMenuItem(
           icon: Icons.app_settings_alt,
-          color: AppColors.accent,
+          color: AppColors.secondary,
           badgeLabel: 'Start App Settings',
           onTap: () {
             setState(() {
-              _selectionColor = AppColors.accent;
+              _selectionColor = AppColors.secondary;
               _selectionLabel = 'Start App Settings';
               final location = GoRouterState.of(context).matchedLocation;
               if (location != '/start_app') {
@@ -107,7 +130,7 @@ class _CircularMenuWidgetState extends State<CircularMenuWidget> {
         ),
         CircularMenuItem(
           icon: Icons.qr_code_2_sharp, // Nuevo icono reemplazando a "chat"
-          color: AppColors.primary,
+          color: AppColors.secondary,
           onTap: () {
             setState(() {
               _selectionColor = AppColors.success;

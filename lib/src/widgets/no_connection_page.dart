@@ -8,6 +8,7 @@ class NoConnectionPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final isConnected = Provider.of<ConnectionProvider>(context).isConnected;
     return Scaffold(
       appBar: CustomAppBar(
@@ -21,12 +22,17 @@ class NoConnectionPage extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.wifi_off, size: 64, color: Colors.redAccent),
-            const SizedBox(height: 16),
-            const Text(
-              'Sin conexión a internet',
-              style: TextStyle(fontSize: 22, color: Colors.black54),
+            const Icon(
+              Icons.computer_outlined,
+              size: 64,
+              color: Colors.redAccent,
             ),
+            const SizedBox(height: 16),
+            Text(
+              'Sin conexión al Servidor',
+              style: TextStyle(fontSize: 22, color: theme.colorScheme.primary),
+            ),
+
             const SizedBox(height: 24),
             ElevatedButton(
               onPressed: () {

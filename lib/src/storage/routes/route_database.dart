@@ -26,9 +26,9 @@ class RouteDatabase {
     final path = join(documentsDirectory, 'route_cards.db');
     return await openDatabase(
       path,
-      version: 2,
+      version: 3,
       onCreate: _onCreate,
-      // onUpgrade: _onUpgrade, // para migraciones futuras si se necesita
+      onUpgrade: _onUpgrade, // para migraciones futuras si se necesita
     );
   }
 
@@ -115,10 +115,20 @@ class RouteDatabase {
         operator_id INTEGER NULL,
         device_id TEXT,
         status_id INTEGER,
+        is_partial INTEGER DEFAULT 1,
         sync_attempts INTEGER,
         FOREIGN KEY (route_card_id) REFERENCES route_cards(id)
       )
     ''');
+  }
+
+  FutureOr<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 3) {
+      // Solo agrega el campo si no existe
+      await db.execute(
+        'ALTER TABLE route_card_reads ADD COLUMN is_partial INTEGER DEFAULT 1',
+      );
+    }
   }
 
   // Insertar o actualizar RouteCard
@@ -284,6 +294,7 @@ class RouteDatabase {
       SELECT SUM(entered_quantity) as total
       FROM route_card_reads
       WHERE code_proces = ?
+      AND is_partial = 0
       ''',
       [codeProces],
     );
@@ -333,7 +344,7 @@ class RouteDatabase {
   }
 
   // Obtener lecturas recientes con JOIN para obtener ruta completa (con límite)
-  Future<List<RouteCardRead>> getRecentReads({int limit = 50}) async {
+  Future<List<RouteCardRead>> getRecentReads({int limit = 25}) async {
     final db = await database;
     final results = await db.rawQuery(
       '''
@@ -348,15 +359,17 @@ class RouteDatabase {
              r.device_id as read_device_id,
              r.status_id as read_status_id,
              r.sync_attempts as read_sync_attempts,
+             r.is_partial,
              c.*
       FROM route_card_reads r
       LEFT JOIN route_cards c ON r.route_card_id = c.id
+      
       ORDER BY r.read_at DESC
       LIMIT ?
     ''',
       [limit],
     );
-
+    // WHERE is_partial = 0
     return results.map((row) {
       try {
         final card = RouteCard.fromMap(row);
@@ -372,6 +385,7 @@ class RouteDatabase {
           supervisor: row['supervisor']?.toString(),
           selectedHourRange: row['selected_hour_range']?.toString(),
           syncAttempts: row['read_sync_attempts'] as int?,
+          isPartial: row['is_partial'] == 1 ? true : false,
         );
       } catch (e) {
         // En caso de error, devolver lectura sin ruta pero con datos básicos

@@ -83,11 +83,12 @@ class CustomDrawerMenu extends StatelessWidget {
                     (context) => AlertDialog(
                       title: const Text('Información de la versión'),
                       content: const Text(
-                        'Fecha de Version: 29/08/2025\n'
+                        'Fecha de Version: 17/09/2025\n'
                         'Desarrollador: ayepes2003@yahoo.es\n'
-                        'Versión: Search Memory, Sqlite, Api\n'
-                        'Versión: 1.0.10'
-                        'Branch: developerJaym',
+                        'Versión: Parciales\n'
+                        'Versión: 2.0.\n'
+                        // 'Versión: 1.0.10'
+                        'Branch:Feature/partial_report\n',
                       ),
                       actions: [
                         TextButton(
