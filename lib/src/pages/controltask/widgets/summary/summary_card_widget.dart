@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:vc_taskcontrol/src/pages/controltask/widgets/events/event_report_dialog.dart';
 import 'package:vc_taskcontrol/src/providers/app/routercard/route_data_provider.dart';
 import 'package:vc_taskcontrol/src/providers/app/routercard/router_card_provider.dart';
+import 'package:vc_taskcontrol/src/providers/app/routercard/sections_provider.dart';
 import 'package:vc_taskcontrol/src/storage/preferences/app_preferences.dart';
 import 'package:vc_taskcontrol/src/storage/routes/route_database.dart';
 
@@ -147,30 +149,42 @@ class SummaryCardWidget extends StatelessWidget {
                       ]);
                     },
                   ),
+                  SizedBox(width: 8),
+                  _buildIconButton(
+                    tooltip: "Reportar Eventos",
+                    icon: Icons.timer_outlined,
+                    onPressed: () async {
+                      final sectionName =
+                          AppPreferences.getSection() ?? 'SinSección';
 
-                  // _buildIconButton(
-                  //   tooltip: "Eliminar todas las tarjetas leídas",
-                  //   icon: Icons.delete_forever,
-                  //   onPressed: () async {
-                  //     await RouteDatabase().clearAllRouteCards();
-                  //     ScaffoldMessenger.of(context).showSnackBar(
-                  //       const SnackBar(
-                  //         content: Text(
-                  //           'Se eliminaron todas las tarjetas rutas.',
-                  //         ),
-                  //       ),
-                  //     );
-                  //   },
-                  // ),
+                      await Provider.of<SectionsProvider>(
+                        context,
+                        listen: false,
+                      ).loadEventSectionsFromApi(sectionName: sectionName);
 
-                  // Text(
-                  //   'Sin datos recientes',
-                  //   style: textTheme.bodyLarge!.copyWith(
-                  //     color: colorScheme.secondary,
-                  //     fontWeight: FontWeight.bold,
-                  //     fontSize: 16,
-                  //   ),
-                  // ),
+                      final events =
+                          Provider.of<SectionsProvider>(
+                            context,
+                            listen: false,
+                          ).eventSections;
+
+                      if (events.isNotEmpty) {
+                        showDialog(
+                          context: context,
+                          barrierDismissible: false,
+                          builder: (_) => EventReportDialog(events: events),
+                        );
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              'No se encontraron eventos para la sección seleccionada.',
+                            ),
+                          ),
+                        );
+                      }
+                    },
+                  ),
                 ],
               ),
             ),
@@ -234,3 +248,29 @@ Widget _buildIconButton({
     ),
   );
 }
+
+
+
+// _buildIconButton(
+                  //   tooltip: "Eliminar todas las tarjetas leídas",
+                  //   icon: Icons.delete_forever,
+                  //   onPressed: () async {
+                  //     await RouteDatabase().clearAllRouteCards();
+                  //     ScaffoldMessenger.of(context).showSnackBar(
+                  //       const SnackBar(
+                  //         content: Text(
+                  //           'Se eliminaron todas las tarjetas rutas.',
+                  //         ),
+                  //       ),
+                  //     );
+                  //   },
+                  // ),
+
+                  // Text(
+                  //   'Sin datos recientes',
+                  //   style: textTheme.bodyLarge!.copyWith(
+                  //     color: colorScheme.secondary,
+                  //     fontWeight: FontWeight.bold,
+                  //     fontSize: 16,
+                  //   ),
+                  // ),

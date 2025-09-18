@@ -172,15 +172,18 @@ class RouteCardRead {
         case 'read':
           return 'Leido';
         case '2':
+          return 'Enviado ';
+        case '3':
+          return 'Pending Sync';
         case 'terminated':
-          return 'Terminado';
+          return 'Completado';
         default:
           return status!;
       }
     }
     if (card == null) return 'Pendiente';
     if (enteredQuantity == (int.tryParse(card!.quantity) ?? 0))
-      return 'Terminado';
+      return 'Completado';
     return 'Read';
   }
 }

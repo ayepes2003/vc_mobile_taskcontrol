@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:provider/provider.dart';
+import 'package:vc_taskcontrol/src/providers/app/routercard/event_blocker_provider.dart';
 import 'package:vc_taskcontrol/src/providers/app/routercard/hour_ranges_provider.dart';
 import 'package:vc_taskcontrol/src/providers/app/routercard/operators_provider.dart';
 import 'package:vc_taskcontrol/src/providers/app/scanner/scan_history.dart';
@@ -80,7 +81,7 @@ void main() async {
       providers: [
         // 1. Provee la instancia ya creada de DioService (no crear nueva, no pasa null)
         Provider<DioService>.value(value: dioService),
-
+        ChangeNotifierProvider(create: (_) => EventBlockerProvider()),
         // 2. Provee RouteDataProvider antes de RouteCardProvider
         ChangeNotifierProvider(
           create: (_) {

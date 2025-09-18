@@ -344,7 +344,7 @@ class RouteDatabase {
   }
 
   // Obtener lecturas recientes con JOIN para obtener ruta completa (con límite)
-  Future<List<RouteCardRead>> getRecentReads({int limit = 50}) async {
+  Future<List<RouteCardRead>> getRecentReads({int limit = 25}) async {
     final db = await database;
     final results = await db.rawQuery(
       '''
@@ -359,16 +359,17 @@ class RouteDatabase {
              r.device_id as read_device_id,
              r.status_id as read_status_id,
              r.sync_attempts as read_sync_attempts,
+             r.is_partial,
              c.*
       FROM route_card_reads r
       LEFT JOIN route_cards c ON r.route_card_id = c.id
-      WHERE is_partial = 0
+      
       ORDER BY r.read_at DESC
       LIMIT ?
     ''',
       [limit],
     );
-
+    // WHERE is_partial = 0
     return results.map((row) {
       try {
         final card = RouteCard.fromMap(row);
@@ -384,6 +385,7 @@ class RouteDatabase {
           supervisor: row['supervisor']?.toString(),
           selectedHourRange: row['selected_hour_range']?.toString(),
           syncAttempts: row['read_sync_attempts'] as int?,
+          isPartial: row['is_partial'] == 1 ? true : false,
         );
       } catch (e) {
         // En caso de error, devolver lectura sin ruta pero con datos básicos

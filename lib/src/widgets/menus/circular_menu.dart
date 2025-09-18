@@ -24,20 +24,43 @@ class _CircularMenuWidgetState extends State<CircularMenuWidget> {
       alignment: Alignment.bottomCenter,
       toggleButtonColor: AppColors.primary,
       backgroundWidget: Center(
-        child: RichText(
-          text: TextSpan(
-            style: TextStyle(color: scheme.onSurface, fontSize: 24),
-            children: <TextSpan>[
-              TextSpan(
-                text: _selectionLabel,
-                style: TextStyle(
-                  color: _selectionColor,
-                  fontWeight: FontWeight.bold,
-                ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Center(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircleAvatar(
+                    radius: 50,
+                    backgroundImage: AssetImage('assets/images/planta.png'),
+                  ),
+                  SizedBox(width: 5),
+                  CircleAvatar(
+                    radius: 50,
+                    backgroundImage: AssetImage('assets/images/HorApp.jpg'),
+                  ),
+                ],
               ),
-              const TextSpan(text: ' opción seleccionada.'),
-            ],
-          ),
+            ),
+
+            SizedBox(height: 15),
+            RichText(
+              text: TextSpan(
+                style: TextStyle(color: scheme.onSurface, fontSize: 24),
+                children: <TextSpan>[
+                  TextSpan(
+                    text: _selectionLabel,
+                    style: TextStyle(
+                      color: _selectionColor,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const TextSpan(text: ' opción seleccionada.'),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
       items: [

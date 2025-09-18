@@ -22,7 +22,11 @@ class NoConnectionPage extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.wifi_off, size: 64, color: Colors.redAccent),
+            const Icon(
+              Icons.computer_outlined,
+              size: 64,
+              color: Colors.redAccent,
+            ),
             const SizedBox(height: 16),
             Text(
               'Sin conexión al Servidor',

@@ -217,7 +217,7 @@ class RouteCardProvider with ChangeNotifier {
   /// Carga lecturas recientes desde SQLite
   Future<void> loadRecentReads() async {
     try {
-      final recentReads = await routeDatabase.getRecentReads();
+      final recentReads = await routeDatabase.getRecentReads(limit: 50);
       _recentReads = recentReads;
       notifyListeners();
     } catch (e) {
@@ -278,7 +278,7 @@ class RouteCardProvider with ChangeNotifier {
       'subsection_id': routeDataProvider.selectedSubsectionId,
       'operator_id': routeDataProvider.selectedOperatorId,
       'accum_diff': null,
-      'is_partial': isPartial,
+      'is_partial': isPartial == true ? 1 : 0,
     };
 
     // Insertar lectura en SQLite y obtener el id generado
@@ -294,7 +294,7 @@ class RouteCardProvider with ChangeNotifier {
 
     if (newRecord != null) {
       // Intentar enviar al backend
-      final bool success = await sendSingleRead(newRecord);
+      final bool success = await sendSingleReadApi(newRecord);
 
       if (success) {
         // Marcar sincronizado si la llamada fue exitosa
@@ -311,10 +311,13 @@ class RouteCardProvider with ChangeNotifier {
 
   /// Función para enviar un solo registro al backend y manejar posibles errores
 
-  Future<bool> sendSingleRead(Map<String, dynamic> record) async {
+  Future<bool> sendSingleReadApi(Map<String, dynamic> record) async {
+    // 2 enviado
+    // 3 pendiente/reintento
     try {
       final response = await dioService.dio.post('/card-reads', data: record);
-      if (response.statusCode == 200) {
+      // 200 o 201 es éxito
+      if (response.statusCode == 201) {
         await routeDatabase.updateSyncStatus(
           record['id'],
           2,
@@ -482,7 +485,7 @@ class RouteCardProvider with ChangeNotifier {
     final pendingReads = await routeDatabase.getPendingReads();
 
     for (var read in pendingReads) {
-      await sendSingleRead(read);
+      await sendSingleReadApi(read);
     }
   }
 
@@ -567,7 +570,7 @@ class RouteCardProvider with ChangeNotifier {
       'tooltip': 'Código de la pieza',
       'icono': Icons.precision_manufacturing_outlined,
     },
-    // ... otras columnas ...
+
     {
       'key': 'totalPiece',
       'titulo': 'Cant Inicial',
@@ -653,7 +656,7 @@ class RouteCardProvider with ChangeNotifier {
     {
       'key': 'enteredQuantity',
       'titulo': 'Digitada',
-      'ancho': 50.0,
+      'ancho': 40.0,
       'align': TextAlign.right,
       'colorFondo': Colors.white,
       'colorTexto': Colors.black,
@@ -662,16 +665,17 @@ class RouteCardProvider with ChangeNotifier {
       'icono': Icons.edit_outlined,
     },
     {
-      'key': 'status',
-      'titulo': 'Estado',
-      'ancho': 60.0,
-      'align': TextAlign.center,
+      'key': 'item',
+      'titulo': 'Item',
+      'ancho': 250.0,
+      'align': TextAlign.left,
       'colorFondo': Colors.white,
       'colorTexto': Colors.black,
       'visible': true,
-      'tooltip': 'Estado de la lectura',
-      'icono': Icons.info_outline,
+      'tooltip': 'Referente a producto/mueble',
+      'icono': Icons.kitchen,
     },
+
     {
       'key': 'section',
       'titulo': 'Sección',
@@ -694,6 +698,17 @@ class RouteCardProvider with ChangeNotifier {
       'tooltip': 'Centro trabajo o subsección',
       'icono': Icons.wallet,
     },
+    // {
+    //   'key': 'is_partial',
+    //   'titulo': 'Parcial',
+    //   'ancho': 60.0,
+    //   'align': TextAlign.center,
+    //   'colorFondo': Colors.white,
+    //   'colorTexto': Colors.black,
+    //   'visible': true,
+    //   'tooltip': 'Parcial',
+    //   'icono': Icons.wallet,
+    // },
     {
       'key': 'selectedHourRange',
       'titulo': 'HourRange',
@@ -705,16 +720,27 @@ class RouteCardProvider with ChangeNotifier {
       'tooltip': 'Horario',
       'icono': Icons.access_time_outlined,
     },
+    // {
+    //   'key': 'readAt',
+    //   'titulo': 'Fecha',
+    //   'ancho': 80.0,
+    //   'align': TextAlign.left,
+    //   'colorFondo': Colors.white,
+    //   'colorTexto': Colors.black,
+    //   'visible': true,
+    //   'tooltip': 'Referente a producto/mueble',
+    //   'icono': Icons.date_range,
+    // },
     {
-      'key': 'item',
-      'titulo': 'Item',
-      'ancho': 250.0,
-      'align': TextAlign.left,
+      'key': 'status',
+      'titulo': 'Estado',
+      'ancho': 80.0,
+      'align': TextAlign.center,
       'colorFondo': Colors.white,
       'colorTexto': Colors.black,
       'visible': true,
-      'tooltip': 'Referente a producto/mueble',
-      'icono': Icons.kitchen,
+      'tooltip': 'Estado de la lectura',
+      'icono': Icons.info_outline,
     },
   ];
 
@@ -752,7 +778,12 @@ class RouteCardProvider with ChangeNotifier {
           return 'Leído';
         if (record.status == '2' ||
             record.status?.toLowerCase() == 'terminated')
-          return 'Terminado';
+          return 'Completado';
+        if (record.status == '3' ||
+            record.status?.toLowerCase() == 'pending_sync')
+          return 'Pending Sync';
+
+        if (record.isPartial == 1) return 'Parcial';
         return record.status ?? 'N/A';
       case 'section':
         return record.section ?? '';
@@ -765,71 +796,3 @@ class RouteCardProvider with ChangeNotifier {
     }
   }
 }
-
-
-// Future<void> sendReadsOneByOne() async {
-  //   try {
-  //     // Obtener el array de registros desde la base de datos
-  //     final List<Map<String, dynamic>> jsonArray =
-  //         await routeDatabase.getAllReadsAsMap();
-
-  //     for (var jsonData in jsonArray) {
-  //       final response = await dioService.dio.post(
-  //         '/card-reads',
-  //         data: jsonData,
-  //       );
-
-  //       if (response.statusCode == 200) {
-  //         print('Dato enviado y guardado correctamente: ${jsonData["id"]}');
-  //       } else {
-  //         print(
-  //           'Error al enviar dato ${jsonData["id"]}: Código ${response.statusCode}',
-  //         );
-  //       }
-  //     }
-  //   } catch (e) {
-  //     print('Error general al enviar datos: $e');
-  //   }
-  // }
-
-
-  // /// Borra todas las lecturas locales
-  // Future<void> clearAllReads() async {
-  //   final db = await routeDatabase.database;
-  //   await db.delete('route_card_reads');
-  //   _recentReads = [];
-  //   notifyListeners();
-  // }
-
-// Future<void> sendSingleReadJsonToApi() async {
-//   try {
-//     // Obtener el JSON completo (array)
-//     String jsonString = await exportReadsAsJson();
-
-//     // Decodificar a List
-//     final List<dynamic> jsonArray = jsonDecode(jsonString);
-
-//     if (jsonArray.isEmpty) {
-//       print("No hay datos para enviar");
-//       return;
-//     }
-
-//     // Tomar el primer objeto del array
-//     final Map<String, dynamic> firstObject = jsonArray[0];
-
-//     // Enviar POST con ese objeto
-//     final response = await dioService.dio.post(
-//       '/card-reads',
-//       data: firstObject,
-//     );
-
-//     if (response.statusCode == 200) {
-//       print(jsonEncode(jsonArray));
-//       print('Dato enviado y guardado correctamente');
-//     } else {
-//       print('Error en el envío: Código ${response.statusCode}');
-//     }
-//   } catch (e) {
-//     print('Error al enviar datos: $e');
-//   }
-// }

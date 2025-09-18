@@ -136,8 +136,9 @@ class _PiecesStepWidgetState extends State<PiecesStepWidget> {
           listen: false,
         ).setRealQuantity(cantidad);
 
+        // Send to provider memory tablet
         provider.addRead(resultado, cantidad, isPartial);
-
+        // send to api server
         await provider.addReadLocal(resultado, cantidad, isPartial);
       }
     }
@@ -155,7 +156,7 @@ class _PiecesStepWidgetState extends State<PiecesStepWidget> {
     final controller = TextEditingController();
     final focusNode = FocusNode();
     String? errorText;
-    bool isPartial = true;
+    bool isPartial = false;
 
     final int remainingQuantity = initialQuantity - registeredQuantity;
 
@@ -187,9 +188,7 @@ class _PiecesStepWidgetState extends State<PiecesStepWidget> {
         }
       }
       // Si pasa validación, retorna el valor junto con el estado de parcialidad
-      Navigator.of(
-        context,
-      ).pop("$val|$isPartial"); // <<< NUEVO: Concatenar valor y estado
+      Navigator.of(context).pop("$val|$isPartial");
     }
 
     return await showDialog<String>(
@@ -235,11 +234,13 @@ class _PiecesStepWidgetState extends State<PiecesStepWidget> {
                               Expanded(
                                 child: Text(
                                   isPartial
-                                      ? "Reportar Parcial SI"
-                                      : "Reportar Normal",
+                                      ? "Proceso: Parcial"
+                                      : "Proceso: Completo",
                                   style: TextStyle(
-                                    fontSize: 18,
+                                    fontSize: 22,
                                     fontWeight: FontWeight.w600,
+                                    color:
+                                        isPartial ? Colors.red : Colors.green,
                                   ),
                                 ),
                               ),
@@ -249,14 +250,12 @@ class _PiecesStepWidgetState extends State<PiecesStepWidget> {
                                   setStateDialog(() => isPartial = val);
                                 },
                                 activeColor:
-                                    isDark
-                                        ? Colors.orangeAccent
-                                        : Colors.orange,
+                                    isDark ? Colors.redAccent : Colors.red,
                                 inactiveThumbColor:
                                     isDark
                                         ? Colors.white
                                         : Colors
-                                            .orange, // ¡Brillante en modo oscuro!
+                                            .green, // ¡Brillante en modo oscuro!
                                 inactiveTrackColor:
                                     isDark
                                         ? Colors.grey.shade700
@@ -309,7 +308,7 @@ class _PiecesStepWidgetState extends State<PiecesStepWidget> {
             );
           },
         );
- },
+      },
     );
   }
 
@@ -558,167 +557,3 @@ class QuantityWidget extends StatelessWidget {
     );
   }
 }
-
-
-
-        // return StatefulBuilder(
-        //   builder: (context, setStateDialog) {
-        //     return SafeArea(
-        //       child: SingleChildScrollView(
-        //         padding: EdgeInsets.only(
-        //           bottom: MediaQuery.of(context).viewInsets.bottom + 20,
-        //           top: 20,
-        //           left: 24,
-        //           right: 24,
-        //         ),
-        //         child: Padding(
-        //           padding: const EdgeInsets.only(top: 5.0),
-        //           child: SizedBox(
-        //             width: 500,
-        //             child: Align(
-        //               alignment: Alignment.topCenter,
-        //               child: AlertDialog(
-        //                 title: Text('Ingrese cantidad a registrar'),
-        //                 content: Column(
-        //                   mainAxisSize: MainAxisSize.min,
-        //                   crossAxisAlignment: CrossAxisAlignment.start,
-        //                   children: [
-        //                     Center(
-        //                       child: Text(
-        //                         'T. Ruta: $code',
-        //                         textAlign: TextAlign.center,
-        //                         style: TextStyle(
-        //                           fontSize: 22,
-        //                           fontWeight: FontWeight.bold,
-        //                           color: theme.colorScheme.primary,
-        //                         ),
-        //                       ),
-        //                     ),
-        //                     const SizedBox(height: 0.5),
-        //                     Row(
-        //                       children: [
-        //                         Expanded(
-        //                           child: Text(
-        //                             "Registro Parcial",
-        //                             style: TextStyle(
-        //                               fontSize: 16,
-        //                               fontWeight: FontWeight.w600,
-        //                             ),
-        //                           ),
-        //                         ),
-        //                         Switch(
-        //                           value: isPartial,
-        //                           onChanged: (val) {
-        //                             setStateDialog(() => isPartial = val);
-        //                           },
-        //                           activeColor:
-        //                               isDark
-        //                                   ? Colors.orangeAccent
-        //                                   : Colors.orange,
-        //                           inactiveThumbColor:
-        //                               isDark ? Colors.grey : Colors.grey,
-        //                           inactiveTrackColor:
-        //                               isDark ? Colors.grey : Colors.grey,
-        //                         ),
-        //                       ],
-        //                     ),
-        //                     Text(
-        //                       'Inicial: $initialQuantity',
-        //                       style: const TextStyle(
-        //                         color: Colors.blueAccent,
-        //                         fontWeight: FontWeight.bold,
-        //                         fontSize: 14,
-        //                       ),
-        //                     ),
-        //                     Text(
-        //                       'Registrada: $registeredQuantity',
-        //                       style: const TextStyle(
-        //                         color: Colors.grey,
-        //                         fontSize: 13,
-        //                       ),
-        //                     ),
-        //                     Text(
-        //                       'Cantidad restante: $remainingQuantity',
-        //                       style: const TextStyle(
-        //                         color: Colors.orange,
-        //                         fontWeight: FontWeight.w600,
-        //                         fontSize: 14,
-        //                       ),
-        //                     ),
-        //                     const SizedBox(height: 10),
-        //                     TextFormField(
-        //                       controller: controller,
-        //                       focusNode: focusNode,
-        //                       keyboardType: TextInputType.number,
-        //                       autofocus: true, //true
-        //                       decoration: InputDecoration(
-        //                         hintText: 'Cantidad',
-        //                         border: const OutlineInputBorder(),
-        //                         errorText: errorText,
-        //                         filled: true,
-        //                         fillColor: Colors.white,
-        //                         suffixIcon: Icon(
-        //                           Icons.numbers,
-        //                           color: Colors.green,
-        //                         ),
-        //                         focusedBorder: OutlineInputBorder(
-        //                           borderSide: BorderSide(
-        //                             color: Colors.green,
-        //                             width: 2.0,
-        //                           ),
-        //                           borderRadius: BorderRadius.circular(10.0),
-        //                         ),
-        //                         enabledBorder: OutlineInputBorder(
-        //                           borderSide: BorderSide(
-        //                             color: Colors.grey,
-        //                             width: 1.0,
-        //                           ),
-        //                           borderRadius: BorderRadius.circular(10.0),
-        //                         ),
-        //                       ),
-        //                       inputFormatters: [
-        //                         FilteringTextInputFormatter.digitsOnly,
-        //                       ],
-        //                       style: const TextStyle(
-        //                         fontSize: 22,
-        //                         letterSpacing: 2,
-        //                         fontWeight: FontWeight.bold,
-        //                         color: Colors.black87,
-        //                       ),
-        //                       textAlign: TextAlign.center,
-        //                       onFieldSubmitted: (_) {
-        //                         onValidate(setStateDialog);
-        //                       },
-        //                     ),
-        //                     if (errorText != null)
-        //                       Padding(
-        //                         padding: const EdgeInsets.only(top: 8),
-        //                         child: Text(
-        //                           errorText!,
-        //                           style: const TextStyle(
-        //                             color: Colors.red,
-        //                             fontSize: 13,
-        //                           ),
-        //                         ),
-        //                       ),
-        //                   ],
-        //                 ),
-        //                 actions: [
-        //                   TextButton(
-        //                     onPressed:
-        //                         () => Navigator.of(dialogContext).pop(null),
-        //                     child: const Text('CANCELAR'),
-        //                   ),
-        //                   ElevatedButton(
-        //                     onPressed: () => onValidate(setStateDialog),
-        //                     child: const Text('ACEPTAR'),
-        //                   ),
-        //                 ],
-        //               ),
-        //             ),
-        //           ),
-        //         ),
-        //       ),
-        //     );
-        //   },
-        // );
