@@ -44,8 +44,9 @@ GoRouter createRouter(ConnectionProvider connectionProvider) {
           Provider.of<ConnectionProvider>(context, listen: false).isConnected;
       final isSettings = state.matchedLocation == '/settings';
       final isNoConnection = state.matchedLocation == '/no-connection';
+      final isCapture = state.matchedLocation == '/prodtime';
 
-      if (!isConnected && !isSettings && !isNoConnection) {
+      if (!isConnected && !isSettings && !isNoConnection && !isCapture) {
         return '/no-connection';
       }
       if (isConnected && isNoConnection) {

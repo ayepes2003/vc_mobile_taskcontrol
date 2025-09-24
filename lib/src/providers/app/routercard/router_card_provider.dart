@@ -1,10 +1,15 @@
 import 'dart:convert';
-import 'dart:ffi';
+import 'dart:io';
+// import 'dart:ffi';
 
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:vc_taskcontrol/src/models/routescard/route_card.dart';
 import 'package:vc_taskcontrol/src/models/routescard/route_card_read.dart';
 import 'package:vc_taskcontrol/src/models/routescard/route_initial_data.dart';
+import 'package:vc_taskcontrol/src/models/sync_data/sync_data.dart';
 import 'package:vc_taskcontrol/src/providers/app/routercard/route_data_provider.dart';
 // import 'package:vc_taskcontrol/src/models/routescard/route_read_record.dart';
 import 'package:vc_taskcontrol/src/services/dio_servide.dart';
@@ -198,11 +203,6 @@ class RouteCardProvider with ChangeNotifier {
     }
   }
 
-  Future<String> exportReadsAsJson() async {
-    final readsAsMap = await routeDatabase.getAllReadsAsMap();
-    return jsonEncode(readsAsMap);
-  }
-
   Future<void> loadRoutesFromLocal() async {
     try {
       final localRoutes = await routeDatabase.getAllRouteCards();
@@ -217,7 +217,7 @@ class RouteCardProvider with ChangeNotifier {
   /// Carga lecturas recientes desde SQLite
   Future<void> loadRecentReads() async {
     try {
-      final recentReads = await routeDatabase.getRecentReads(limit: 50);
+      final recentReads = await routeDatabase.getRecentReads(limit: 25);
       _recentReads = recentReads;
       notifyListeners();
     } catch (e) {
@@ -309,15 +309,17 @@ class RouteCardProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  /// Función para enviar un solo registro al backend y manejar posibles errores
-
   Future<bool> sendSingleReadApi(Map<String, dynamic> record) async {
     // 2 enviado
     // 3 pendiente/reintento
     try {
-      final response = await dioService.dio.post('/card-reads', data: record);
+      final response = await dioService.dio.post(
+        '/card-reads',
+        data: record,
+        options: Options(validateStatus: (status) => status! < 500),
+      );
       // 200 o 201 es éxito
-      if (response.statusCode == 201) {
+      if (response.statusCode == 201 || response.statusCode == 200) {
         await routeDatabase.updateSyncStatus(
           record['id'],
           2,
@@ -334,55 +336,6 @@ class RouteCardProvider with ChangeNotifier {
       await routeDatabase.updateSyncStatus(record['id'], 3);
       return false;
     }
-  }
-
-  /// Agrega una lectura local (guardado en SQLite) y recarga lecturas
-  Future<void> addReadLocalBuena(RouteCard card, int enteredQuantity) async {
-    final routeCardId = await routeDatabase.getRouteCardIdByCodeProces(
-      card.codeProces,
-    );
-
-    if (routeCardId == null) {
-      throw Exception(
-        'RouteCard not found in local database for saving reading.',
-      );
-    }
-
-    final int totalRegistered = await routeDatabase.getTotalRegisteredQuantity(
-      card.codeProces,
-    );
-
-    final int initialQuantity = int.tryParse(card.initialQuantity) ?? 0;
-
-    final int difference =
-        initialQuantity - (totalRegistered + enteredQuantity);
-
-    await routeDatabase.insertRead({
-      'route_card_id': routeCardId,
-      'code_proces': card.codeProces,
-      'entered_quantity': enteredQuantity,
-      'difference': difference,
-      'read_at': DateTime.now().toIso8601String(),
-      'device_id': 'tabletDev',
-      'status_id': 1,
-      'sync_attempts': 0,
-
-      // Puedes incluir aquí campos nuevos de contextos si los quieres guardar directamente
-      'supervisor': routeDataProvider.supervisor,
-      'selected_hour_range': routeDataProvider.selectedHourRange,
-      'section': routeDataProvider.section,
-      'subsection': routeDataProvider.subsection,
-      'operator': routeDataProvider.operatorName,
-      'supervisory_id': routeDataProvider.selectedSupervisorId,
-      'section_id': routeDataProvider.selectedSectionId,
-      'subsection_id': routeDataProvider.selectedSubsectionId,
-      'operator_id': routeDataProvider.selectedOperatorId,
-
-      // Aquí si usas accumDiff, calcula y pásalo igual (deja null por ahora si no tienes lógica)
-      'accum_diff': null,
-    });
-
-    await loadRecentReads();
   }
 
   /// Agrega lectura sólo en memoria (no persistente)
@@ -481,6 +434,62 @@ class RouteCardProvider with ChangeNotifier {
     return null;
   }
 
+  // En tu provider o service
+  Future<SyncResult> syncAllPendingReads() async {
+    int successful = 0;
+    int failed = 0;
+
+    try {
+      // Obtener registros pendientes
+      final List<Map<String, dynamic>> pendingReads =
+          await routeDatabase.getPendingReads();
+
+      // Sync cada registro
+      for (final record in pendingReads) {
+        // Verificar límite de intentos (máximo 5)
+        if ((record['sync_attempts'] ?? 0) >= 5) {
+          await routeDatabase.updateSyncStatus(
+            record['id'],
+            4,
+          ); // Error permanente
+          failed++;
+          continue;
+        }
+
+        // Intentar enviar
+        final bool success = await sendSingleReadApi(record);
+
+        if (success) {
+          successful++;
+          // Marcar como enviado (2)
+          await routeDatabase.updateSyncStatus(record['id'], 2);
+        } else {
+          failed++;
+          // Incrementar contador de intentos
+          await routeDatabase.incrementSyncAttempts(record['id']);
+        }
+
+        // Pequeña pausa para no saturar
+        await Future.delayed(Duration(milliseconds: 300));
+      }
+
+      // Limpiar registros viejos enviados
+      await routeDatabase.deleteOldSyncedRecords();
+
+      return SyncResult(
+        successful: successful,
+        failed: failed,
+        total: pendingReads.length,
+      );
+    } catch (e) {
+      return SyncResult(
+        successful: successful,
+        failed: failed,
+        error: e.toString(),
+      );
+    }
+  }
+
   Future<void> syncPendingReads() async {
     final pendingReads = await routeDatabase.getPendingReads();
 
@@ -488,6 +497,219 @@ class RouteCardProvider with ChangeNotifier {
       await sendSingleReadApi(read);
     }
   }
+
+  Future<String> exportReadsAsJson() async {
+    final readsAsMap = await routeDatabase.getAllReadsAsMap();
+    return jsonEncode(readsAsMap);
+  }
+
+  // En tu Provider
+  Future<bool> exportBackupOnly() async {
+    try {
+      print('🔵 Iniciando exportación (sin limpiar)...');
+
+      final allReads = await routeDatabase.getAllReadsForBackup();
+
+      if (allReads.isEmpty) {
+        print('🟡 No hay registros para exportar');
+        return false;
+      }
+
+      print('📊 Encontrados ${allReads.length} registros');
+
+      final jsonString = await _generateBackupJson(allReads);
+      final filePath = await _saveBackupToFile(jsonString);
+
+      final file = File(filePath);
+      if (await file.exists()) {
+        final fileSize = await file.length();
+        print('✅ Archivo guardado: $filePath ($fileSize bytes)');
+
+        await _shareBackupFile(filePath);
+        print('✅ Exportación completada exitosamente');
+        return true;
+      } else {
+        print('❌ Error: Archivo no se guardó');
+        return false;
+      }
+    } catch (e) {
+      print('❌ Error en exportación: $e');
+      return false;
+    }
+  }
+
+  Future<bool> exportCompleteBackupAndClean() async {
+    try {
+      print('Iniciando respaldo completo...');
+
+      final allReads = await routeDatabase.getAllReadsForBackup();
+      if (allReads.isEmpty) {
+        print('No hay registros para respaldar');
+        return false;
+      }
+
+      // ✅ Pequeña pausa
+      await Future.delayed(Duration(milliseconds: 100));
+
+      final jsonString = await _generateBackupJson(allReads);
+      final filePath = await _saveBackupToFile(jsonString);
+
+      final file = File(filePath);
+      if (await file.exists()) {
+        print('✅ Archivo guardado: $filePath');
+
+        // ✅ Pausa antes de compartir
+        await Future.delayed(Duration(milliseconds: 500));
+
+        await _shareBackupFile(filePath);
+
+        // ✅ Pausa antes de limpiar
+        await Future.delayed(Duration(milliseconds: 100));
+
+        // await routeDatabase.deleteRecordsOlderThan24Hours();
+
+        return true;
+      }
+      return false;
+    } catch (e) {
+      print('❌ Error en respaldo: $e');
+      return false;
+    }
+  }
+
+  // ✅ FUNCIÓN COMPARTIR ACTUALIZADA
+  Future<void> _shareBackupFile(String filePath) async {
+    try {
+      final deviceId = await _getDeviceId();
+      final fileName = 'backup_$deviceId.json';
+
+      final params = ShareParams(
+        text: 'Respaldo completo - ${DateTime.now()} - ${await _getDeviceId()}',
+        subject: fileName,
+        files: [XFile(filePath)],
+      );
+      await SharePlus.instance.share(params);
+    } catch (e) {
+      print('Error compartiendo: $e');
+    }
+  }
+
+  Future<String> _generateBackupJson(List<Map<String, dynamic>> reads) async {
+    final exportData = {
+      'exported_at': DateTime.now().toIso8601String(),
+      'device_id': await _getDeviceId(),
+      'total_records': reads.length,
+      'backup_type': 'complete_backup',
+      'records': reads,
+    };
+
+    return jsonEncode(exportData);
+  }
+
+  Future<String> _saveBackupToFile(String jsonString) async {
+    final directory = await getTemporaryDirectory();
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    // ✅ Agregar random string para evitar duplicados
+    final randomId = UniqueKey()
+        .toString()
+        .replaceAll('[#]', '')
+        .substring(0, 6);
+    final file = File('${directory.path}/backup_${timestamp}_$randomId.json');
+    await file.writeAsString(jsonString);
+    return file.path;
+  }
+
+  Future<bool> cleanOldRecords() async {
+    try {
+      print('🧹 Iniciando limpieza de registros >24h...');
+
+      // Opcional: Mostrar cuántos registros se van a borrar
+      final allReads = await routeDatabase.getAllReadsForBackup();
+      final totalBefore = allReads.length;
+
+      await routeDatabase.deleteRecordsOlderThan24Hours();
+
+      // Verificar cuántos quedaron
+      final readsAfter = await routeDatabase.getAllReadsForBackup();
+      final totalAfter = readsAfter.length;
+      final deletedCount = totalBefore - totalAfter;
+
+      print('✅ Limpieza completada: $deletedCount registros eliminados');
+      return true;
+    } catch (e) {
+      print('❌ Error en limpieza: $e');
+      return false;
+    }
+  }
+
+  // Función auxiliar: ID dispositivo
+  Future<String> _getDeviceIdFn() async {
+    try {
+      final section = await AppPreferences.getSection() ?? 'sin_seccion';
+      final subsection =
+          await AppPreferences.getSubsection() ?? 'sin_subseccion';
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+
+      // Ejemplo: "Corte_Prepintado_1735678901234"
+      return '${section}_${subsection}_$timestamp';
+    } catch (e) {
+      return 'tablet_${DateTime.now().millisecondsSinceEpoch}';
+    }
+  }
+
+  Future<String> _getDeviceIdFn2() async {
+    try {
+      final section = await AppPreferences.getSection() ?? 'sin_seccion';
+      final subsection =
+          await AppPreferences.getSubsection() ?? 'sin_subseccion';
+
+      // Formato legible: YYYYMMDD_HHMMSS
+      final now = DateTime.now();
+      final formattedDate =
+          '${now.year}${_twoDigits(now.month)}${_twoDigits(now.day)}_${_twoDigits(now.hour)}${_twoDigits(now.minute)}${_twoDigits(now.second)}';
+
+      return '${section}_${subsection}_$formattedDate';
+    } catch (e) {
+      final now = DateTime.now();
+      final formattedDate =
+          '${now.year}${_twoDigits(now.month)}${_twoDigits(now.day)}_${_twoDigits(now.hour)}${_twoDigits(now.minute)}';
+      return 'tablet_$formattedDate';
+    }
+  }
+
+  Future<String> _getDeviceId() async {
+    try {
+      final section = await AppPreferences.getSection() ?? 'sin_seccion';
+      final subsection =
+          await AppPreferences.getSubsection() ?? 'sin_subseccion';
+
+      // ✅ USAR la función getCurrentTimestamp
+      final formattedDate = getCurrentTimestamp();
+
+      return '${section}_${subsection}_$formattedDate';
+    } catch (e) {
+      // ✅ USAR la función aquí también
+      final formattedDate = getCurrentTimestamp();
+      return 'tablet_$formattedDate';
+    }
+  }
+
+  // Función reusable para formato de fecha
+  String getCurrentTimestamp() {
+    final now = DateTime.now();
+    return '${now.year}${_twoDigits(now.month)}${_twoDigits(now.day)}_${_twoDigits(now.hour)}${_twoDigits(now.minute)}${_twoDigits(now.second)}';
+  }
+
+  // Función auxiliar para 2 dígitos
+  String _twoDigits(int n) => n.toString().padLeft(2, '0');
+  // Función reusable para formato de fecha
+  String getCurrentTimestamp() {
+    final now = DateTime.now();
+    return '${now.year}${_twoDigits(now.month)}${_twoDigits(now.day)}_${_twoDigits(now.hour)}${_twoDigits(now.minute)}${_twoDigits(now.second)}';
+  }
+
+  // Función auxiliar para 2 dígitos
+  String _twoDigits(int n) => n.toString().padLeft(2, '0');
 
   /// Última lectura registrada (si existe)
   RouteCardRead? get lastRead {
@@ -772,10 +994,10 @@ class RouteCardProvider with ChangeNotifier {
         print('DEBUG: difference handed to cell: ${record.difference}');
         return record.difference.toString();
       case 'status':
-        if (record.status == '0' || record.status?.toLowerCase() == 'pending')
-          return 'Pendiente';
-        if (record.status == '1' || record.status?.toLowerCase() == 'read')
-          return 'Leído';
+        // if (record.status == '0' || record.status?.toLowerCase() == 'pending')
+        //   return 'Pendiente';
+        // if (record.status == '1' || record.status?.toLowerCase() == 'read')
+        //   return 'Leído';
         if (record.status == '2' ||
             record.status?.toLowerCase() == 'terminated')
           return 'Completado';
@@ -796,3 +1018,87 @@ class RouteCardProvider with ChangeNotifier {
     }
   }
 }
+
+// /// Función para enviar un solo registro al backend y manejar posibles errores
+// Future<bool> sendSingleReadApiOld(Map<String, dynamic> record) async {
+//   // 2 enviado
+//   // 3 pendiente/reintento
+//   try {
+//     final response = await dioService.dio.post(
+//       '/card-reads',
+//       data: record,
+//       options: Options(validateStatus: (status) => status! < 500),
+//     );
+//     // 200 o 201 es éxito
+//     if (response.statusCode == 201 || response.statusCode == 200) {
+//       await routeDatabase.updateSyncStatus(
+//         record['id'],
+//         2,
+//       ); // marcado como enviado
+//       return true;
+//     } else {
+//       await routeDatabase.updateSyncStatus(
+//         record['id'],
+//         3,
+//       ); // pendiente/reintento
+//       return false;
+//     }
+//   } catch (e) {
+//     await routeDatabase.updateSyncStatus(record['id'], 3);
+//     return false;
+//   }
+// }
+
+// En tu Provider o Service
+// Future<SyncResult> syncAllPendingReads() async {
+//   int successful = 0;
+//   int failed = 0;
+//   int duplicates = 0;
+
+//   try {
+//     final List<Map<String, dynamic>> pendingReads =
+//         await routeDatabase.getPendingReads();
+
+//     for (final record in pendingReads) {
+//       // Verificar límite de intentos (ej: máximo 5)
+//       if ((record['sync_attempts'] ?? 0) >= 5) {
+//         await routeDatabase.updateSyncStatus(
+//           record['id'],
+//           4,
+//         ); // Error permanente
+//         failed++;
+//         continue;
+//       }
+
+//       final bool success = await sendSingleReadApi(record);
+
+//       if (success) {
+//         successful++;
+//         // Opción 1: Borrar registro local
+//         // await routeDatabase.deleteRead(record['id']);
+//         // Opción 2: Marcar como enviado (2) si quieres mantener histórico
+//         // await routeDatabase.updateSyncStatus(record['id'], 2);
+//       } else {
+//         failed++;
+//         await routeDatabase.incrementSyncAttempts(record['id']);
+//       }
+
+//       // Pequeña pausa para no saturar el backend
+//       await Future.delayed(Duration(milliseconds: 300));
+//     }
+
+//     return SyncResult(
+//       successful: successful,
+//       failed: failed,
+//       duplicates: duplicates,
+//       total: pendingReads.length,
+//     );
+//   } catch (e) {
+//     return SyncResult(
+//       successful: successful,
+//       failed: failed,
+//       duplicates: duplicates,
+//       error: e.toString(),
+//     );
+//   }
+// }

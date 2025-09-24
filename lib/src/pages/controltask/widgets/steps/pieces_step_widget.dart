@@ -138,7 +138,7 @@ class _PiecesStepWidgetState extends State<PiecesStepWidget> {
 
         // Send to provider memory tablet
         provider.addRead(resultado, cantidad, isPartial);
-        // send to api server
+        // save to local sqlite and send to api server
         await provider.addReadLocal(resultado, cantidad, isPartial);
       }
     }

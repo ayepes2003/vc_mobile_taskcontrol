@@ -85,8 +85,8 @@ class CustomDrawerMenu extends StatelessWidget {
                       content: const Text(
                         'Fecha de Version: 17/09/2025\n'
                         'Desarrollador: ayepes2003@yahoo.es\n'
-                        'Versión: Parciales\n'
-                        'Versión: 2.0.\n'
+                        'Versión: Parciales+Exportar JSON\n'
+                        'Versión: 2.1.\n'
                         // 'Versión: 1.0.10'
                         'Branch:Feature/partial_report\n',
                       ),

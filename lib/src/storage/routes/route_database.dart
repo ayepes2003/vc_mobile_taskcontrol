@@ -344,7 +344,7 @@ class RouteDatabase {
   }
 
   // Obtener lecturas recientes con JOIN para obtener ruta completa (con límite)
-  Future<List<RouteCardRead>> getRecentReads({int limit = 25}) async {
+  Future<List<RouteCardRead>> getRecentReads({int limit = 50}) async {
     final db = await database;
     final results = await db.rawQuery(
       '''
@@ -420,8 +420,53 @@ class RouteDatabase {
     final db = await database;
     return await db.query(
       'route_card_reads',
-      where: 'status_id = ?',
+      where: 'status_id = ? ',
       whereArgs: [3],
+      orderBy: 'read_at ASC',
+    );
+  }
+
+  Future<void> incrementSyncAttempts(int id) async {
+    final db = await database;
+    await db.rawUpdate(
+      'UPDATE reads_table SET sync_attempts = sync_attempts + 1 WHERE id = ?',
+      [id],
+    );
+  }
+
+  // 4. Borrar registros viejos enviados (más de 1 hora)
+  Future<void> deleteOldSyncedRecords() async {
+    final db = await database;
+    final oneHourAgo =
+        DateTime.now().subtract(Duration(hours: 1)).toIso8601String();
+
+    await db.delete(
+      'reads_table',
+      where: 'status_id = ? AND read_at < ?',
+      whereArgs: [2, oneHourAgo], // Enviados (2) con más de 1 hora
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> getAllReadsForBackup() async {
+    final db = await database;
+    return await db.query(
+      'route_card_reads',
+      where: 'status_id IN (?, ?, ?)', // 1, 2, 3
+      whereArgs: [1, 2, 3],
+      orderBy: 'read_at ASC',
+    );
+  }
+
+  //funcion para borrar registros de más de 24 horas
+  Future<void> deleteRecordsOlderThan24Hours() async {
+    final db = await database;
+    final twentyFourHoursAgo =
+        DateTime.now().subtract(Duration(hours: 24)).toIso8601String();
+
+    await db.delete(
+      'route_card_reads',
+      where: 'read_at < ?',
+      whereArgs: [twentyFourHoursAgo],
     );
   }
 

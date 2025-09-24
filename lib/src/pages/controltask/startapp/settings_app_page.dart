@@ -350,7 +350,7 @@ class _SettingsStartAppPageState extends State<SettingsStartAppPage> {
         ),
         _buildIconButton(
           tooltip: "Cargar todas las tarjetas rutas por seccion",
-          icon: Icons.download_for_offline,
+          icon: Icons.backup_table,
           onPressed: () async {
             final sectionName = AppPreferences.getSection();
             ScaffoldMessenger.of(context).showSnackBar(
@@ -366,20 +366,52 @@ class _SettingsStartAppPageState extends State<SettingsStartAppPage> {
           },
         ),
         _buildIconButton(
-          tooltip: "Exportar tarjetas de ruta al servidor",
-          icon: Icons.import_export,
+          tooltip: "Exportar respaldo completo JSON",
+          icon: Icons.backup,
           onPressed: () async {
+            // Mostrar loading
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Exportando tarjetas de ruta...')),
+              const SnackBar(
+                content: Text('Generando respaldo completo...'),
+                duration: Duration(seconds: 2),
+              ),
             );
-            await Future.wait([
-              Provider.of<RouteCardProvider>(
-                context,
-                listen: false,
-              ).exportReadsAsJson(),
-            ]);
+
+            try {
+              // Usar nuestra NUEVA función
+              final success =
+                  await Provider.of<RouteCardProvider>(
+                    context,
+                    listen: false,
+                  ).exportBackupOnly();
+              // final success =
+              //     await Provider.of<RouteCardProvider>(
+              //       context,
+              //       listen: false,
+              //     ).exportCompleteBackupAndClean();
+
+              // Mostrar resultado
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    success
+                        ? '✅ Respaldo completado'
+                        : '❌ Error en el respaldo',
+                  ),
+                  duration: Duration(seconds: 3),
+                ),
+              );
+            } catch (e) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('❌ Error: ${e.toString()}'),
+                  duration: Duration(seconds: 3),
+                ),
+              );
+            }
           },
         ),
+
         _buildIconButton(
           tooltip: "Sincronizar tarjetas de ruta leídas",
           icon: Icons.sync,
@@ -404,20 +436,86 @@ class _SettingsStartAppPageState extends State<SettingsStartAppPage> {
             });
           },
         ),
+        // _buildIconButton(
+        //   tooltip: "Eliminar todas las tarjetas leídas",
+        //   icon: Icons.delete_forever,
+        //   onPressed: () async {
+        //     await _handleDeleteRoutesReads();
+        //     ScaffoldMessenger.of(context).showSnackBar(
+        //       const SnackBar(
+        //         content: Text('Se eliminaron todas las lecturas.'),
+        //       ),
+        //     );
+        //     setState(() {
+        //       _footerMessage = 'Se eliminaron todas las lecturas.';
+        //     });
+        //   },
+        // ),
         _buildIconButton(
-          tooltip: "Eliminar todo",
-          icon: Icons.delete_sweep,
+          tooltip: "Limpiar datos antiguos (>24h)",
+          icon: Icons.cleaning_services,
           onPressed: () async {
-            await _handleDeleteAllRoutes();
+            // Diálogo de confirmación
+            final confirmed =
+                await showDialog<bool>(
+                  context: context,
+                  builder:
+                      (context) => AlertDialog(
+                        title: Text('Confirmar limpieza'),
+                        content: Text(
+                          '¿Estás seguro de borrar los registros con más de 24 horas?',
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context, false),
+                            child: Text('Cancelar'),
+                          ),
+                          ElevatedButton(
+                            onPressed: () => Navigator.pop(context, true),
+                            child: Text('Limpiar'),
+                          ),
+                        ],
+                      ),
+                ) ??
+                false;
 
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Se eliminaron todos los datos')),
-            );
-            setState(() {
-              _footerMessage = 'Se eliminó todo.';
-            });
+            if (confirmed) {
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(SnackBar(content: Text('🧹 Limpiando datos...')));
+
+              final success =
+                  await Provider.of<RouteCardProvider>(
+                    context,
+                    listen: false,
+                  ).cleanOldRecords();
+
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    success ? '✅ Limpieza completada' : '❌ Error en limpieza',
+                  ),
+                  duration: Duration(seconds: 3),
+                ),
+              );
+            }
           },
         ),
+        // _buildIconButton(
+        //   tooltip: "Exportar tarjetas de ruta al servidor",
+        //   icon: Icons.import_export,
+        //   onPressed: () async {
+        //     ScaffoldMessenger.of(context).showSnackBar(
+        //       const SnackBar(content: Text('Exportando tarjetas de ruta...')),
+        //     );
+        //     await Future.wait([
+        //       Provider.of<RouteCardProvider>(
+        //         context,
+        //         listen: false,
+        //       ).exportReadsAsJson(),
+        //     ]);
+        //   },
+        // ),
         // Puedes añadir más botones si quieres
       ],
     );
