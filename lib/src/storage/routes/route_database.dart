@@ -457,12 +457,65 @@ class RouteDatabase {
     );
   }
 
-  //funcion para borrar registros de más de 24 horas
+  //funcion para borrar registros de más de 24 horas descargados y las cards relacionadas
+  Future<void> cleanOldRecordsAndRelatedCards() async {
+    final db = await database;
+
+    await db.transaction((txn) async {
+      // 1. Fecha límite
+      final twentyFourHoursAgo =
+          DateTime.now().subtract(Duration(hours: 24)).toIso8601String();
+
+      // 2. Identificar route_cards que solo tienen reads >24h o sin reads
+      final orphanCards = await txn.rawQuery(
+        '''
+      SELECT rc.id 
+      FROM route_cards rc
+      LEFT JOIN route_card_reads rcr ON rc.id = rcr.route_card_id
+      GROUP BY rc.id
+      HAVING COUNT(rcr.id) = 0 
+         OR MAX(rcr.read_at) < ?
+    ''',
+        [twentyFourHoursAgo],
+      );
+
+      // 3. Extraer IDs de cards a borrar
+      final cardIdsToDelete =
+          orphanCards.map((card) => card['id'] as int).toList();
+
+      if (cardIdsToDelete.isNotEmpty) {
+        // 4. Primero borrar reads relacionados (por si acaso)
+        await txn.delete(
+          'route_card_reads',
+          where:
+              'route_card_id IN (${List.filled(cardIdsToDelete.length, '?').join(',')})',
+          whereArgs: cardIdsToDelete,
+        );
+
+        // 5. Luego borrar los cards
+        await txn.delete(
+          'route_cards',
+          where:
+              'id IN (${List.filled(cardIdsToDelete.length, '?').join(',')})',
+          whereArgs: cardIdsToDelete,
+        );
+      }
+
+      // 6. Finalmente borrar reads sueltos >24h (por si quedaron algunos)
+      // await txn.delete(
+      //   'route_card_reads',
+      //   where: 'read_at < ?',
+      //   whereArgs: [twentyFourHoursAgo],
+      // );
+    });
+  }
+
+  //funcion para borrar registros de más de 24 horas reads tablet
   Future<void> deleteRecordsOlderThan24Hours() async {
     final db = await database;
     final twentyFourHoursAgo =
         DateTime.now().subtract(Duration(hours: 24)).toIso8601String();
-
+    //hoy
     await db.delete(
       'route_card_reads',
       where: 'read_at < ?',

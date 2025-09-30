@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:vc_taskcontrol/src/models/routescard/route_card_read.dart';
-import 'package:vc_taskcontrol/src/pages/controltask/widgets/kpi_total/kpi_count_card.dart';
+// import 'package:vc_taskcontrol/src/models/routescard/route_card_read.dart';
+// import 'package:vc_taskcontrol/src/pages/controltask/widgets/kpi_total/kpi_count_card.dart';
 import 'package:vc_taskcontrol/src/pages/controltask/widgets/routecard/route_card_tablet.dart';
 import 'package:vc_taskcontrol/src/providers/app/routercard/hour_ranges_provider.dart';
 import 'package:vc_taskcontrol/src/providers/app/routercard/operators_provider.dart';
@@ -11,7 +11,7 @@ import 'package:vc_taskcontrol/src/providers/app/routercard/route_data_provider.
 import 'package:vc_taskcontrol/src/providers/app/routercard/sections_provider.dart';
 import 'package:vc_taskcontrol/src/providers/app/routercard/supervisors_provider.dart';
 import 'package:vc_taskcontrol/src/storage/preferences/app_preferences.dart';
-import 'package:vc_taskcontrol/src/storage/preferences/general_preferences.dart';
+// import 'package:vc_taskcontrol/src/storage/preferences/general_preferences.dart';
 import 'package:vc_taskcontrol/src/providers/app/routercard/router_card_provider.dart';
 import 'package:vc_taskcontrol/src/services/connection_provider.dart';
 import 'package:vc_taskcontrol/src/storage/routes/route_database.dart';
@@ -325,29 +325,6 @@ class _SettingsStartAppPageState extends State<SettingsStartAppPage> {
   Widget _headerBar() {
     return Row(
       children: [
-        // KPICountsWidget(),
-        _buildIconButton(
-          tooltip: "Ir Pagina Captura Tarjetas de Ruta",
-          icon: Icons.barcode_reader,
-          onPressed: () async {
-            _footerMessage =
-                "Actualizando datos (Supervisores, Operadores, etc.)";
-            final location = GoRouterState.of(context).matchedLocation;
-            if (location != '/prodtime') {
-              context.push('/prodtime');
-            }
-          },
-        ),
-        _buildIconButton(
-          tooltip: "Actualizar datos (Supervisores, Operadores, etc.)",
-          icon: Icons.manage_accounts,
-          onPressed: () async {
-            _footerMessage =
-                "Actualizando datos (Supervisores, Operadores, etc.)";
-            _handleDataRefresh(context);
-            setState(() {});
-          },
-        ),
         _buildIconButton(
           tooltip: "Cargar todas las tarjetas rutas por seccion",
           icon: Icons.backup_table,
@@ -366,7 +343,7 @@ class _SettingsStartAppPageState extends State<SettingsStartAppPage> {
           },
         ),
         _buildIconButton(
-          tooltip: "Exportar respaldo completo JSON",
+          tooltip: "Exportar datos - respaldo completo JSON",
           icon: Icons.backup,
           onPressed: () async {
             // Mostrar loading
@@ -413,15 +390,6 @@ class _SettingsStartAppPageState extends State<SettingsStartAppPage> {
         ),
 
         _buildIconButton(
-          tooltip: "Sincronizar tarjetas de ruta leídas",
-          icon: Icons.sync,
-          onPressed: () async {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Sincronizando lecturas...')),
-            );
-          },
-        ),
-        _buildIconButton(
           tooltip: "Eliminar todas las tarjetas leídas",
           icon: Icons.delete_forever,
           onPressed: () async {
@@ -436,21 +404,6 @@ class _SettingsStartAppPageState extends State<SettingsStartAppPage> {
             });
           },
         ),
-        // _buildIconButton(
-        //   tooltip: "Eliminar todas las tarjetas leídas",
-        //   icon: Icons.delete_forever,
-        //   onPressed: () async {
-        //     await _handleDeleteRoutesReads();
-        //     ScaffoldMessenger.of(context).showSnackBar(
-        //       const SnackBar(
-        //         content: Text('Se eliminaron todas las lecturas.'),
-        //       ),
-        //     );
-        //     setState(() {
-        //       _footerMessage = 'Se eliminaron todas las lecturas.';
-        //     });
-        //   },
-        // ),
         _buildIconButton(
           tooltip: "Limpiar datos antiguos (>24h)",
           icon: Icons.cleaning_services,
@@ -461,7 +414,7 @@ class _SettingsStartAppPageState extends State<SettingsStartAppPage> {
                   context: context,
                   builder:
                       (context) => AlertDialog(
-                        title: Text('Confirmar limpieza'),
+                        title: Text('Confirmar limpieza Completa'),
                         content: Text(
                           '¿Estás seguro de borrar los registros con más de 24 horas?',
                         ),
@@ -472,7 +425,7 @@ class _SettingsStartAppPageState extends State<SettingsStartAppPage> {
                           ),
                           ElevatedButton(
                             onPressed: () => Navigator.pop(context, true),
-                            child: Text('Limpiar'),
+                            child: Text('Limpiar Todo'),
                           ),
                         ],
                       ),
@@ -480,9 +433,11 @@ class _SettingsStartAppPageState extends State<SettingsStartAppPage> {
                 false;
 
             if (confirmed) {
-              ScaffoldMessenger.of(
-                context,
-              ).showSnackBar(SnackBar(content: Text('🧹 Limpiando datos...')));
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('🧹 Limpiando todos los datos...>24 Horas'),
+                ),
+              );
 
               final success =
                   await Provider.of<RouteCardProvider>(
@@ -493,7 +448,9 @@ class _SettingsStartAppPageState extends State<SettingsStartAppPage> {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(
-                    success ? '✅ Limpieza completada' : '❌ Error en limpieza',
+                    success
+                        ? '✅ Limpieza COMPLETA exitosa'
+                        : '❌ Error en limpieza',
                   ),
                   duration: Duration(seconds: 3),
                 ),
@@ -501,7 +458,15 @@ class _SettingsStartAppPageState extends State<SettingsStartAppPage> {
             }
           },
         ),
-        // _buildIconButton(
+
+        // Puedes añadir más botones si quieres
+      ],
+    );
+  }
+}
+
+
+// _buildIconButton(
         //   tooltip: "Exportar tarjetas de ruta al servidor",
         //   icon: Icons.import_export,
         //   onPressed: () async {
@@ -516,8 +481,55 @@ class _SettingsStartAppPageState extends State<SettingsStartAppPage> {
         //     ]);
         //   },
         // ),
-        // Puedes añadir más botones si quieres
-      ],
-    );
-  }
-}
+
+          // _buildIconButton(
+        //   tooltip: "Eliminar todas las tarjetas leídas",
+        //   icon: Icons.delete_forever,
+        //   onPressed: () async {
+        //     await _handleDeleteRoutesReads();
+        //     ScaffoldMessenger.of(context).showSnackBar(
+        //       const SnackBar(
+        //         content: Text('Se eliminaron todas las lecturas.'),
+        //       ),
+        //     );
+        //     setState(() {
+        //       _footerMessage = 'Se eliminaron todas las lecturas.';
+        //     });
+        //   },
+        // ),
+
+        // pendiente implementar sync online
+        // _buildIconButton(
+        //   tooltip: "Sincronizar tarjetas de ruta leídas",
+        //   icon: Icons.sync,
+        //   onPressed: () async {
+        //     ScaffoldMessenger.of(context).showSnackBar(
+        //       const SnackBar(content: Text('Sincronizando lecturas...')),
+        //     );
+        //   },
+        // ),
+
+         // _buildIconButton(
+        //   tooltip: "Actualizar datos (Supervisores, Operadores, etc.)",
+        //   icon: Icons.manage_accounts,
+        //   onPressed: () async {
+        //     _footerMessage =
+        //         "Sin Implementar:Actualizando datos (Supervisores, Operadores, etc.)";
+        //     _handleDataRefresh(context);
+        //     setState(() {});
+        //   },
+        // ),
+
+           // KPICountsWidget(),
+        // _buildIconButton(
+        //   tooltip: "Ir Pagina Captura Tarjetas de Ruta",
+        //   icon: Icons.barcode_reader,
+        //   onPressed: () async {
+        //     _footerMessage =
+        //         "Actualizando datos (Supervisores, Operadores, etc.)";
+        //     final location = GoRouterState.of(context).matchedLocation;
+        //     if (location != '/prodtime') {
+        //       context.push('/prodtime');
+        //     }
+        //   },
+        // ),

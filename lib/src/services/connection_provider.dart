@@ -10,7 +10,7 @@ class ConnectionProvider with ChangeNotifier {
   Timer? _graceTimer;
 
   // Duración de la "ventana de gracia" para tolerar microcortes
-  final Duration graceDuration = const Duration(seconds: 15);
+  final Duration graceDuration = const Duration(seconds: 30);
 
   ConnectionProvider(this._dioService, ApiConfigService apiConfig) {
     startConnectionMonitoring();
@@ -44,7 +44,7 @@ class ConnectionProvider with ChangeNotifier {
   }
 
   void startConnectionMonitoring({
-    Duration interval = const Duration(seconds: 45),
+    Duration interval = const Duration(seconds: 20),
   }) {
     checkApiConnection();
     _periodicTimer?.cancel();

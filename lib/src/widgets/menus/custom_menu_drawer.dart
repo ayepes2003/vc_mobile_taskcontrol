@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:vc_taskcontrol/src/settings/app_version.dart';
 import 'package:vc_taskcontrol/src/settings/theme/app_theme.dart';
 
 class CustomDrawerMenu extends StatelessWidget {
@@ -76,25 +77,34 @@ class CustomDrawerMenu extends StatelessWidget {
             ),
             onTap: () {
               Navigator.pop(context); // Cierra el Drawer
-
               showDialog(
                 context: context,
                 builder:
                     (context) => AlertDialog(
-                      title: const Text('Información de la versión'),
-                      content: const Text(
-                        'Fecha de Version: 17/09/2025\n'
-                        'Desarrollador: ayepes2003@yahoo.es\n'
-                        'Versión: Parciales+Exportar JSON\n'
-                        'Versión: 2.1.\n'
-                        // 'Versión: 1.0.10'
-                        'Branch:Feature/partial_report\n',
+                      title: Row(
+                        children: [
+                          Icon(Icons.info_outline, color: Colors.blue),
+                          SizedBox(width: 10),
+                          Text('About App'),
+                        ],
+                      ),
+                      content: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('📱 App: ${AppVersion.appName}'),
+                          Text('🚀 Version: ${AppVersion.fullVersion}'),
+                          Text('📅 Release Date: ${AppVersion.releaseDate}'),
+                          Text('🌿 Branch: ${AppVersion.branch}'),
+                          Text('👨‍💻 Developer: ${AppVersion.developer}'),
+                          SizedBox(height: 10),
+                          Text('📋 Changes: ${AppVersion.changes}'),
+                        ],
                       ),
                       actions: [
                         TextButton(
-                          onPressed:
-                              () => Navigator.pop(context), // Cierra el dialog
-                          child: const Text('Cerrar'),
+                          onPressed: () => Navigator.pop(context),
+                          child: Text('Close'),
                         ),
                       ],
                     ),

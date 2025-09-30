@@ -24,6 +24,8 @@ class PiecesStepWidget extends StatefulWidget {
   State<PiecesStepWidget> createState() => _PiecesStepWidgetState();
 }
 
+final controller = TextEditingController();
+
 class _PiecesStepWidgetState extends State<PiecesStepWidget> {
   late final TextEditingController _searchController;
   late final FocusNode _searchFocusNode;
@@ -105,6 +107,7 @@ class _PiecesStepWidgetState extends State<PiecesStepWidget> {
 
         //no hay tarjeta por seccion y codigo
       }
+      print('${resultado.codePiece} ${resultado.itemCode}');
 
       final cantidadStr = await showQuantityDialog(
         context,
@@ -113,6 +116,9 @@ class _PiecesStepWidgetState extends State<PiecesStepWidget> {
         tolerance,
         toleranceDifference,
         code,
+        remaining,
+        resultado.codePiece,
+        resultado.itemCode,
       );
 
       if (cantidadStr != null && cantidadStr.isNotEmpty) {
@@ -150,16 +156,20 @@ class _PiecesStepWidgetState extends State<PiecesStepWidget> {
     int registeredQuantity,
     int tolerance,
     int toleranceDifference,
-
     String code,
+    int remaining,
+    String esquema,
+    String material,
   ) async {
-    final controller = TextEditingController();
     final focusNode = FocusNode();
     String? errorText;
     bool isPartial = false;
-
+    final sectionName = AppPreferences.getSection();
     final int remainingQuantity = initialQuantity - registeredQuantity;
-
+    // final controller = TextEditingController();
+    final controller = TextEditingController(
+      text: remainingQuantity.toString(),
+    );
     void onValidate(StateSetter setStateDialog) {
       final val = controller.text.trim();
       final parsed = int.tryParse(val);
@@ -213,21 +223,74 @@ class _PiecesStepWidgetState extends State<PiecesStepWidget> {
                   child: SizedBox(
                     width: 300,
                     child: AlertDialog(
-                      title: Center(child: Text('Ingrese cantidad a reportar')),
+                      // title: Center(child: Text('Ingrese cantidad a reportar')),
+                      title: Center(
+                        child: Text('Selecione Proceso Completo ó Parcial'),
+                      ),
                       content: Column(
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Center(
-                            child: Text(
-                              'T. Ruta: $code',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
-                                color: theme.colorScheme.primary,
-                              ),
-                            ),
+                            child: // Supongamos que tienes disponibles estas variables:
+                                // sectionName, esquema, material, code
+                                sectionName == 'CORTE'
+                                    ? Container(
+                                      padding: const EdgeInsets.all(12),
+                                      margin: const EdgeInsets.only(bottom: 10),
+                                      decoration: BoxDecoration(
+                                        color:
+                                            Colors
+                                                .yellow
+                                                .shade100, // Color de fondo para CORTE
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(
+                                          color: Colors.orange,
+                                          width: 2,
+                                        ),
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            //
+                                            'Esquema: $esquema',
+                                            style: TextStyle(
+                                              fontSize: 24,
+                                              fontWeight: FontWeight.bold,
+                                              color: theme.colorScheme.primary,
+                                            ),
+                                          ),
+                                          Text(
+                                            //  $material
+                                            'Material: $material',
+                                            style: TextStyle(
+                                              fontSize: 23,
+                                              fontWeight: FontWeight.bold,
+                                              color: theme.colorScheme.primary,
+                                            ),
+                                          ),
+                                          Text(
+                                            'T. Ruta: $code',
+                                            style: TextStyle(
+                                              fontSize: 22,
+                                              fontWeight: FontWeight.bold,
+                                              color: theme.colorScheme.primary,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    )
+                                    : Text(
+                                      'T. Ruta: $code',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        fontSize: 22,
+                                        fontWeight: FontWeight.bold,
+                                        color: theme.colorScheme.primary,
+                                      ),
+                                    ),
                           ),
                           Row(
                             children: [
@@ -263,7 +326,14 @@ class _PiecesStepWidgetState extends State<PiecesStepWidget> {
                               ),
                             ],
                           ),
-
+                          Text(
+                            "Cambiar cantidad solo cuando sea Proceso Parcial",
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.red,
+                            ),
+                          ),
                           const SizedBox(height: 10),
                           QuantityWidget(
                             remainingQuantity: remainingQuantity,
@@ -274,6 +344,7 @@ class _PiecesStepWidgetState extends State<PiecesStepWidget> {
                             errorText: errorText,
                             onFieldSubmitted: () => onValidate(setStateDialog),
                           ),
+
                           if (errorText != null)
                             Center(
                               child: Padding(
@@ -451,7 +522,7 @@ class _PiecesStepWidgetState extends State<PiecesStepWidget> {
           const SizedBox(width: 6),
           IconButton(
             tooltip: 'Historial',
-            icon: Icon(Icons.history, color: Colors.blueAccent),
+            icon: Icon(Icons.history, color: Colors.deepOrange),
             onPressed: () {
               /* Mostrar el historial */
             },
@@ -516,6 +587,7 @@ class QuantityWidget extends StatelessWidget {
           ),
         ),
         SizedBox(width: 10),
+
         Flexible(
           flex: 1,
           child: Padding(

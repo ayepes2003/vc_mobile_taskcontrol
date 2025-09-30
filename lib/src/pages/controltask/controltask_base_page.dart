@@ -227,7 +227,6 @@ class _ControltaskBasePageState extends State<ControltaskBasePage> {
                         );
                       });
                     },
-
                     onSubsectionSelected: (subsection) async {
                       final routeProvider = Provider.of<RouteDataProvider>(
                         context,
@@ -249,7 +248,6 @@ class _ControltaskBasePageState extends State<ControltaskBasePage> {
                         selectionStep = getNextStepIndex(steps, "subsection");
                       });
                     },
-
                     onOperatorSelected: (operator) async {
                       final routeProvider = Provider.of<RouteDataProvider>(
                         context,

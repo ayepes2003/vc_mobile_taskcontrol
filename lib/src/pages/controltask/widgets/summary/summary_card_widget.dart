@@ -84,7 +84,7 @@ class SummaryCardWidget extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Text("CANTIDAD", style: textTheme.titleMedium),
+                  Text("ULTIMA CANTIDAD", style: textTheme.titleMedium),
                   _buildSummaryRow(context, "Inicial", estimated.toString()),
                   _buildSummaryRow(context, "Real", (real ?? "-").toString()),
                   _buildSummaryRow(

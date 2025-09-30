@@ -621,23 +621,33 @@ class RouteCardProvider with ChangeNotifier {
 
   Future<bool> cleanOldRecords() async {
     try {
-      print('🧹 Iniciando limpieza de registros >24h...');
+      print('🧹 Iniciando limpieza COMPLETA de registros >24h...');
 
-      // Opcional: Mostrar cuántos registros se van a borrar
+      // Opcional: Mostrar estadísticas antes
       final allReads = await routeDatabase.getAllReadsForBackup();
-      final totalBefore = allReads.length;
+      final allCards =
+          await routeDatabase.getAllRouteCards(); // Si tienes este método
+      final totalReadsBefore = allReads.length;
+      final totalCardsBefore = allCards.length;
 
-      await routeDatabase.deleteRecordsOlderThan24Hours();
+      // ✅ LLAMAR A LA NUEVA FUNCIÓN COMPLETA
+      await routeDatabase.cleanOldRecordsAndRelatedCards();
 
-      // Verificar cuántos quedaron
+      // Opcional: Estadísticas después
       final readsAfter = await routeDatabase.getAllReadsForBackup();
-      final totalAfter = readsAfter.length;
-      final deletedCount = totalBefore - totalAfter;
+      final cardsAfter = await routeDatabase.getAllRouteCards();
+      final deletedReads = totalReadsBefore - readsAfter.length;
+      final deletedCards = totalCardsBefore - cardsAfter.length;
 
-      print('✅ Limpieza completada: $deletedCount registros eliminados');
+      print('''
+    ✅ L  impieza COMPLETA completada:
+      - $deletedReads registros de lectura eliminados
+      - $deletedCards tarjetas de ruta eliminadas
+        ''');
+
       return true;
     } catch (e) {
-      print('❌ Error en limpieza: $e');
+      print('❌ Error en limpieza completa: $e');
       return false;
     }
   }
@@ -694,14 +704,6 @@ class RouteCardProvider with ChangeNotifier {
     }
   }
 
-  // Función reusable para formato de fecha
-  String getCurrentTimestamp() {
-    final now = DateTime.now();
-    return '${now.year}${_twoDigits(now.month)}${_twoDigits(now.day)}_${_twoDigits(now.hour)}${_twoDigits(now.minute)}${_twoDigits(now.second)}';
-  }
-
-  // Función auxiliar para 2 dígitos
-  String _twoDigits(int n) => n.toString().padLeft(2, '0');
   // Función reusable para formato de fecha
   String getCurrentTimestamp() {
     final now = DateTime.now();
@@ -1102,3 +1104,27 @@ class RouteCardProvider with ChangeNotifier {
 //     );
 //   }
 // }
+
+// antes del 30/9/2025
+// Future<bool> cleanOldRecordsOld() async {
+//     try {
+//       print('🧹 Iniciando limpieza de registros >24h...');
+
+//       // Opcional: Mostrar cuántos registros se van a borrar
+//       final allReads = await routeDatabase.getAllReadsForBackup();
+//       final totalBefore = allReads.length;
+
+//       await routeDatabase.deleteRecordsOlderThan24Hours();
+
+//       // Verificar cuántos quedaron
+//       final readsAfter = await routeDatabase.getAllReadsForBackup();
+//       final totalAfter = readsAfter.length;
+//       final deletedCount = totalBefore - totalAfter;
+
+//       print('✅ Limpieza completada: $deletedCount registros eliminados');
+//       return true;
+//     } catch (e) {
+//       print('❌ Error en limpieza: $e');
+//       return false;
+//     }
+//   }
